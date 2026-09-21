@@ -3,6 +3,79 @@
 
 -- These tables must exist before replica identity or Realtime publication can
 -- be configured. This also repairs projects where schema.sql was only partly run.
+create table if not exists public.profiles (
+  id varchar primary key,
+  username varchar unique,
+  name varchar not null,
+  designation varchar,
+  role varchar not null,
+  department varchar not null,
+  division varchar,
+  zone varchar,
+  employee_id varchar,
+  phone varchar,
+  avatar_badge varchar,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.block_requests (
+  id bigserial primary key,
+  department varchar not null,
+  route_section varchar,
+  work_type varchar,
+  requested_time timestamptz,
+  duration_hours numeric,
+  urgency varchar,
+  affected_trains text,
+  remarks text,
+  status varchar default 'Pending',
+  request_data jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists public.ai_schedule (
+  id bigserial primary key,
+  block_request_id bigint,
+  scheduled_start timestamptz,
+  scheduled_end timestamptz,
+  optimized_score numeric,
+  ai_remarks text,
+  created_at timestamptz default now()
+);
+
+alter table public.profiles add column if not exists username varchar;
+alter table public.profiles add column if not exists name varchar;
+alter table public.profiles add column if not exists designation varchar;
+alter table public.profiles add column if not exists role varchar;
+alter table public.profiles add column if not exists department varchar;
+alter table public.profiles add column if not exists division varchar;
+alter table public.profiles add column if not exists zone varchar;
+alter table public.profiles add column if not exists employee_id varchar;
+alter table public.profiles add column if not exists phone varchar;
+alter table public.profiles add column if not exists avatar_badge varchar;
+alter table public.profiles add column if not exists created_at timestamptz default now();
+
+alter table public.block_requests add column if not exists department varchar;
+alter table public.block_requests add column if not exists route_section varchar;
+alter table public.block_requests add column if not exists work_type varchar;
+alter table public.block_requests add column if not exists requested_time timestamptz;
+alter table public.block_requests add column if not exists duration_hours numeric;
+alter table public.block_requests add column if not exists urgency varchar;
+alter table public.block_requests add column if not exists affected_trains text;
+alter table public.block_requests add column if not exists remarks text;
+alter table public.block_requests add column if not exists status varchar default 'Pending';
+alter table public.block_requests add column if not exists request_data jsonb;
+alter table public.block_requests add column if not exists created_at timestamptz default now();
+alter table public.block_requests add column if not exists updated_at timestamptz default now();
+
+alter table public.ai_schedule add column if not exists block_request_id bigint;
+alter table public.ai_schedule add column if not exists scheduled_start timestamptz;
+alter table public.ai_schedule add column if not exists scheduled_end timestamptz;
+alter table public.ai_schedule add column if not exists optimized_score numeric;
+alter table public.ai_schedule add column if not exists ai_remarks text;
+alter table public.ai_schedule add column if not exists created_at timestamptz default now();
+
 create table if not exists public.notification_events (
   id varchar primary key,
   type varchar not null,
