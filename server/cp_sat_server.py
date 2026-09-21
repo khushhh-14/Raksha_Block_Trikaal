@@ -9,8 +9,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-import joblib
-import pandas as pd
 from ortools.sat.python import cp_model
 
 HOST = "127.0.0.1"
@@ -26,6 +24,7 @@ MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "defect_priority_l
 
 def load_risk_model() -> Any | None:
     try:
+        import joblib
         model = joblib.load(MODEL_PATH)
         print(f"Loaded LightGBM risk model from {MODEL_PATH}", file=sys.stderr)
         return model
@@ -100,6 +99,7 @@ def risk_score(request: dict[str, Any]) -> float:
     features = track_features(request)
     if RISK_MODEL is not None:
         try:
+            import pandas as pd
             row = pd.DataFrame([{
                 "severity": max(1, min(5, round(features["track_degradation_index"] or float(request.get("severity", 1))))),
                 "days_overdue": max(0, round(float(request.get("days_overdue", 0) or 0))),

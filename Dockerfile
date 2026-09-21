@@ -19,8 +19,8 @@ CMD ["nginx", "-g", "daemon off;"]
 
 FROM python:3.13-slim AS solver
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.local.txt ./
+RUN pip install --no-cache-dir -r requirements.local.txt
 COPY server ./server
 COPY models ./models
 COPY data ./data
