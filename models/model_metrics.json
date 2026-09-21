@@ -1,0 +1,18 @@
+{
+  "roc_auc": 0.947464,
+  "precision": 0.875,
+  "recall": 0.875,
+  "f1": 0.875,
+  "brier_score": 0.071707,
+  "cross_validation_roc_auc_mean": 0.965354,
+  "cross_validation_roc_auc_std": 0.024204,
+  "logistic_regression_roc_auc": 0.903986,
+  "majority_base_rate_roc_auc": 0.5,
+  "majority_base_rate_brier_score": 0.225357,
+  "realised_base_rate": 0.348571,
+  "always_positive_f1": 0.510638,
+  "lightgbm_beats_logistic": true,
+  "lightgbm_beats_majority": true,
+  "roc_auc_margin_over_logistic": 0.043478,
+  "roc_auc_margin_over_majority": 0.447464
+}

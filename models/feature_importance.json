@@ -1,0 +1,78 @@
+{
+  "target": "failed_within_90d",
+  "sample_rows": 70,
+  "feature_importance": [
+    {
+      "feature": "asset_age_years",
+      "mean_abs_shap_value": 2.374835
+    },
+    {
+      "feature": "days_overdue",
+      "mean_abs_shap_value": 2.146507
+    },
+    {
+      "feature": "past_failure_count",
+      "mean_abs_shap_value": 1.239066
+    },
+    {
+      "feature": "severity",
+      "mean_abs_shap_value": 0.395886
+    },
+    {
+      "feature": "deferred_count",
+      "mean_abs_shap_value": 0.243014
+    },
+    {
+      "feature": "department_Engineering",
+      "mean_abs_shap_value": 0.137027
+    },
+    {
+      "feature": "department_TRD",
+      "mean_abs_shap_value": 0.074955
+    },
+    {
+      "feature": "department_S & T",
+      "mean_abs_shap_value": 0.065184
+    },
+    {
+      "feature": "section_NZM-FDB",
+      "mean_abs_shap_value": 0.060261
+    },
+    {
+      "feature": "section_PWL-MTJ",
+      "mean_abs_shap_value": 0.05756
+    },
+    {
+      "feature": "section_GZB-ALJN",
+      "mean_abs_shap_value": 0.015729
+    },
+    {
+      "feature": "section_NDLS-PWL",
+      "mean_abs_shap_value": 0.014739
+    },
+    {
+      "feature": "section_DEC-GGN",
+      "mean_abs_shap_value": 0.0
+    },
+    {
+      "feature": "section_DLI-DEC",
+      "mean_abs_shap_value": 0.0
+    },
+    {
+      "feature": "section_GZB-MTC",
+      "mean_abs_shap_value": 0.0
+    },
+    {
+      "feature": "section_NDLS-GZB",
+      "mean_abs_shap_value": 0.0
+    },
+    {
+      "feature": "section_PNP-UMB",
+      "mean_abs_shap_value": 0.0
+    },
+    {
+      "feature": "section_VAPI-ST",
+      "mean_abs_shap_value": 0.0
+    }
+  ]
+}
