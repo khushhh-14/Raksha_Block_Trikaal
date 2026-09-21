@@ -3,16 +3,17 @@ import bcrypt from 'bcryptjs';
 import { AppNotification, BlockRequest, User, UserRole, Department, AiScheduleRecord, SupabaseSyncState } from '../types';
 import { OFFICIAL_ROLES, normalizePersonName } from '../data/mockData';
 
-const requireEnv = (key: string): string => {
+const readEnv = (key: string, fallback: string): string => {
   const value = (import.meta as any).env?.[key];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
+    console.warn(`Missing ${key}; running with local demo fallback.`);
+    return fallback;
   }
   return value;
 };
 
-export const SUPABASE_URL = requireEnv('VITE_SUPABASE_URL');
-export const SUPABASE_ANON_KEY = requireEnv('VITE_SUPABASE_ANON_KEY');
+export const SUPABASE_URL = readEnv('VITE_SUPABASE_URL', 'https://demo.invalid.supabase.co');
+export const SUPABASE_ANON_KEY = readEnv('VITE_SUPABASE_ANON_KEY', 'demo-anon-key');
 
 export interface NotificationEventInput extends Omit<AppNotification, 'id' | 'timestamp' | 'read'> {
   id?: string;
