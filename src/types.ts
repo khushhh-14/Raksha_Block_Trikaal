@@ -126,6 +126,9 @@ export interface BundledBlockWindow {
   savedDetentionMinutes: number;
   conflictsResolvedCount: number;
   aiJustification: string;
+  risk_score?: number;
+  machine_sequence?: string[];
+  passenger_punctuality_impact_score?: number;
   coordinationTasks: {
     dept: Department;
     requestId: string;
@@ -148,6 +151,8 @@ export interface SolverOptimizationResult {
   hasOverlaps?: boolean;
   estimatedPassengerMinutesLost?: number;
   delayWeightUsed?: number;
+  riskModelStatus?: string;
+  riskLambda?: number;
 }
 
 export interface ShadowBlockOpportunity {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   X,
   ShieldCheck,
@@ -15,6 +15,9 @@ import {
 import { BlockRequest, User } from '../types';
 import { DEPARTMENT_CONFIG } from '../data/mockData';
 import { recordLedgerEvent } from '../services/auditLedgerService';
+import { getSectionTimetable } from '../data/railwayOperations';
+import { validateGSRCompliance } from '../utils/gsrRuleEngine';
+import { GSRCompliancePanel } from './GSRCompliancePanel';
 
 interface SafetyCheckoutModalProps {
   isOpen: boolean;
@@ -34,6 +37,7 @@ export const SafetyCheckoutModal: React.FC<SafetyCheckoutModalProps> = ({
   if (!isOpen || !request) return null;
 
   const deptConfig = DEPARTMENT_CONFIG[request.department] || DEPARTMENT_CONFIG.ENGINEERING;
+  const gsrCompliance = useMemo(() => validateGSRCompliance(request, getSectionTimetable(request.section), [request]), [request]);
 
   // The 3 mandatory safety checkout checkboxes required by specification
   const [checkStaffCleared, setCheckStaffCleared] = useState(false);
@@ -50,7 +54,7 @@ export const SafetyCheckoutModal: React.FC<SafetyCheckoutModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!allThreeChecked) return;
+    if (!allThreeChecked || !gsrCompliance.isCompliant) return;
 
     setIsSubmitting(true);
 
@@ -152,6 +156,8 @@ export const SafetyCheckoutModal: React.FC<SafetyCheckoutModalProps> = ({
               <span className="font-mono text-[10px] text-slate-400">{currentUser.employeeId}</span>
             </div>
           </div>
+
+          <GSRCompliancePanel result={gsrCompliance} />
 
           {/* Safety Checklist Header with Quick Check All */}
           <div className="flex items-center justify-between pt-1">
@@ -295,9 +301,9 @@ export const SafetyCheckoutModal: React.FC<SafetyCheckoutModalProps> = ({
               <button
                 type="submit"
                 id="btn-submit-safety-clearance"
-                disabled={!allThreeChecked || isSubmitting}
+                disabled={!allThreeChecked || !gsrCompliance.isCompliant || isSubmitting}
                 className={`px-5 py-2 text-xs font-bold rounded shadow-xs flex items-center justify-center space-x-1.5 transition-all w-full sm:w-auto ${
-                  allThreeChecked && !isSubmitting
+                  allThreeChecked && gsrCompliance.isCompliant && !isSubmitting
                     ? 'text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 cursor-pointer shadow-md'
                     : 'text-slate-400 bg-slate-200 border border-slate-300 cursor-not-allowed opacity-75'
                 }`}

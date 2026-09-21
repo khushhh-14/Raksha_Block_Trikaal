@@ -1,0 +1,23 @@
+services:
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?Set VITE_SUPABASE_URL in .env.local or your shell}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?Set VITE_SUPABASE_ANON_KEY in .env.local or your shell}
+        VITE_SOLVER_API_URL: ""
+    depends_on:
+      solver:
+        condition: service_started
+    ports:
+      - "5173:5173"
+
+  solver:
+    build:
+      context: .
+      target: solver
+    environment:
+      RISK_LAMBDA: ${RISK_LAMBDA:-1.0}
+    ports:
+      - "8000:8000"

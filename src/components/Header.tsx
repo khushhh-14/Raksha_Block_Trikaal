@@ -336,6 +336,22 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       )}
 
+      {currentUser && (
+        <div className="border-t border-blue-900/70 bg-[#00004d] px-3 py-1.5 text-[10px] text-blue-100 sm:px-6">
+          <div className="mx-auto flex max-w-[1800px] flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            <span className="font-semibold tracking-wide text-amber-200">RAKSHA-BLOCK unified CRIS middleware layer</span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono">
+              {['TMS: Connected', 'COA: Synced', 'TDMS: Online', 'SMMS: Active'].map((system) => (
+                <span key={system} className="inline-flex items-center gap-1 text-emerald-200">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  {system}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Indian Railways Saffron Accent Stripe */}
       <div className="h-1 w-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600" />
 

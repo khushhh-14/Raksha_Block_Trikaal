@@ -15,6 +15,15 @@ class OptimizationRequest(BaseModel):
     date: str
     start_time: str
     duration_mins: int = Field(ge=1)
+    line_type: str = ""
+    machinery_deployed: list[str] = Field(default_factory=list)
+    track_features: dict[str, float] = Field(default_factory=dict)
+    days_overdue: int = 0
+    severity: int = 1
+    asset_age_years: float = 0
+    past_failure_count: int = 0
+    deferred_count: int = 0
+    speed_restriction_kmh: float = 0
 
 
 class OptimizationPayload(BaseModel):
@@ -65,8 +74,15 @@ def to_solver_request(request: OptimizationRequest) -> dict[str, Any]:
         "requestedStartTime": request.start_time,
         "requestedEndTime": end_time(request.start_time, request.duration_mins),
         "durationMinutes": request.duration_mins,
-        "lineType": "",
-        "machineryDeployed": [],
+        "lineType": request.line_type,
+        "machineryDeployed": request.machinery_deployed,
+        "track_features": request.track_features,
+        "days_overdue": request.days_overdue,
+        "severity": request.severity,
+        "asset_age_years": request.asset_age_years,
+        "past_failure_count": request.past_failure_count,
+        "deferred_count": request.deferred_count,
+        "speedRestrictionKmH": request.speed_restriction_kmh,
         "status": "PENDING",
     }
 
@@ -80,6 +96,12 @@ def health() -> dict[str, str]:
 def optimize(payload: OptimizationPayload) -> dict[str, Any]:
     requests = [to_solver_request(request) for request in payload.requests]
     return build_result(requests, payload.premium_train_windows, payload.delay_weight, payload.affected_movements)
+
+
+@app.post("/api/cp-sat/solve")
+def solve_cp_sat(payload: OptimizationPayload) -> dict[str, Any]:
+    """Canonical browser-facing route; retained alongside /api/optimize for compatibility."""
+    return optimize(payload)
 
 
 @app.post("/api/plan-horizon")

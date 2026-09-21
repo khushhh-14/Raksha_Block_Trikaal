@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   X,
   ShieldCheck,
@@ -15,6 +15,9 @@ import { DEPARTMENT_CONFIG } from '../data/mockData';
 import { BlockRequest, User } from '../types';
 import { TrainImpactWidget } from './TrainImpactWidget';
 import { recordLedgerEvent } from '../services/auditLedgerService';
+import { getSectionTimetable } from '../data/railwayOperations';
+import { validateGSRCompliance } from '../utils/gsrRuleEngine';
+import { GSRCompliancePanel } from './GSRCompliancePanel';
 
 interface AdminActionModalProps {
   request: BlockRequest | null;
@@ -59,6 +62,7 @@ export const AdminActionModal: React.FC<AdminActionModalProps> = ({
   );
   const [integratedBlockId, setIntegratedBlockId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const gsrCompliance = useMemo(() => validateGSRCompliance(request, getSectionTimetable(request.section), allRequests), [request, allRequests]);
 
   const calculateApprovedDuration = () => {
     const [sH, sM] = approvedStartTime.split(':').map(Number);
@@ -71,6 +75,8 @@ export const AdminActionModal: React.FC<AdminActionModalProps> = ({
   const handleApply = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (decision !== 'REJECT' && !gsrCompliance.isCompliant) return;
 
     if (decision === 'REJECT' && !controllerRemarks.trim()) {
       setError('A valid operating reason or remarks is mandatory when rejecting a maintenance block.');
@@ -233,6 +239,8 @@ export const AdminActionModal: React.FC<AdminActionModalProps> = ({
             </div>
           </div>
 
+          <GSRCompliancePanel result={gsrCompliance} />
+
           {/* Time Modification Controls (if APPROVE or MODIFY) */}
           {decision !== 'REJECT' && (
             <div className="p-4 bg-slate-50 border border-slate-200 rounded space-y-3">
@@ -375,13 +383,14 @@ export const AdminActionModal: React.FC<AdminActionModalProps> = ({
             </button>
             <button
               type="submit"
-              className={`px-5 py-2 text-xs font-bold text-white rounded transition-colors shadow-sm flex items-center space-x-2 cursor-pointer ${
+              disabled={decision !== 'REJECT' && !gsrCompliance.isCompliant}
+              className={`px-5 py-2 text-xs font-bold rounded transition-colors shadow-sm flex items-center space-x-2 ${decision !== 'REJECT' && !gsrCompliance.isCompliant ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : `text-white cursor-pointer ${
                 decision === 'REJECT'
                   ? 'bg-red-700 hover:bg-red-800'
                   : decision === 'MODIFY'
                   ? 'bg-blue-700 hover:bg-blue-800'
                   : 'bg-emerald-700 hover:bg-emerald-800'
-              }`}
+              }`}`}
             >
               <ShieldCheck className="w-4 h-4" />
               <span>

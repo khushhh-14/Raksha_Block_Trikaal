@@ -118,6 +118,17 @@ export const runCpSatSolver = async (requests: BlockRequest[], delayWeight = 0.5
     date: request.requestedDate,
     start_time: request.requestedStartTime,
     duration_mins: request.durationMinutes,
+    line_type: request.lineType,
+    machinery_deployed: request.machineryDeployed,
+    track_features: {
+      track_degradation_index: Number((request as BlockRequest & { trackDegradationIndex?: number }).trackDegradationIndex ?? (request.priority === 'SAFETY_CRITICAL' ? 5 : request.priority === 'URGENT' ? 4 : 2)),
+      gmt: Number((request as BlockRequest & { gmt?: number }).gmt ?? 0),
+      rail_age: Number((request as BlockRequest & { railAge?: number }).railAge ?? 0),
+      usfd_count: Number((request as BlockRequest & { usfdCount?: number }).usfdCount ?? 0),
+      surface_wear_index: Number((request as BlockRequest & { surfaceWearIndex?: number }).surfaceWearIndex ?? 0),
+      current_speed_restriction: Number(request.speedRestrictionKmH ?? 0),
+    },
+    speed_restriction_kmh: request.speedRestrictionKmH ?? 0,
   }));
   const premiumTrainWindows = activePending.flatMap((request) =>
     getSectionTimetable(request.section)

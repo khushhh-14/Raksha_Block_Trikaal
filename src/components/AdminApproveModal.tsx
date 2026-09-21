@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CheckCircle2, X, TrainTrack, ShieldCheck, Clock, Calendar, AlertCircle, Sparkles } from 'lucide-react';
 import { BlockRequest, User } from '../types';
 import { DEPARTMENT_CONFIG } from '../data/mockData';
 import { TrainImpactWidget } from './TrainImpactWidget';
 import { AiCoPilotRecommendationEngine } from './AiCoPilotRecommendationEngine';
 import { recordLedgerEvent } from '../services/auditLedgerService';
+import { getSectionTimetable } from '../data/railwayOperations';
+import { validateGSRCompliance } from '../utils/gsrRuleEngine';
+import { GSRCompliancePanel } from './GSRCompliancePanel';
 
 interface AdminApproveModalProps {
   request: BlockRequest | null;
@@ -35,9 +38,11 @@ export const AdminApproveModal: React.FC<AdminApproveModalProps> = ({
   const [remarks, setRemarks] = useState<string>(
     'Corridor block window sanctioned in full as requested. Adjacent line traffic advised.'
   );
+  const gsrCompliance = useMemo(() => validateGSRCompliance(request, getSectionTimetable(request.section), allRequests), [request, allRequests]);
 
   const handleApprove = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!gsrCompliance.isCompliant) return;
     const nowStr = `${new Date().toISOString().split('T')[0]} ${new Date().toLocaleTimeString('en-IN', {
       hour12: false,
       hour: '2-digit',
@@ -211,6 +216,7 @@ export const AdminApproveModal: React.FC<AdminApproveModalProps> = ({
               {currentUser.name}), and sync live with the {deptConfig.name} portal in localStorage.
             </span>
           </div>
+          <GSRCompliancePanel result={gsrCompliance} />
 
           {/* Modal Actions */}
           <div className="pt-3 border-t border-slate-200 flex items-center justify-end space-x-3">
@@ -224,7 +230,8 @@ export const AdminApproveModal: React.FC<AdminApproveModalProps> = ({
             <button
               type="submit"
               id="btn-confirm-approve"
-              className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded shadow-xs flex items-center space-x-1.5 cursor-pointer"
+              disabled={!gsrCompliance.isCompliant}
+              className={`px-5 py-2 text-xs font-bold rounded shadow-xs flex items-center space-x-1.5 ${gsrCompliance.isCompliant ? 'text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 cursor-pointer' : 'text-slate-400 bg-slate-200 cursor-not-allowed'}`}
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Confirm & Sanction Block</span>

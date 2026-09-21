@@ -5,8 +5,12 @@ import json
 import math
 import re
 import sys
+import os
+from pathlib import Path
 from typing import Any
 
+import joblib
+import pandas as pd
 from ortools.sat.python import cp_model
 
 HOST = "127.0.0.1"
@@ -16,6 +20,22 @@ MAX_CANDIDATE_SIZE = 8
 HORIZON_MAX_CANDIDATE_SIZE = 3
 LATENESS_WEIGHT = 0.3
 HORIZON_MAX_CANDIDATES = 2000
+RISK_LAMBDA = float(os.environ.get("RISK_LAMBDA", "1.0"))
+MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "defect_priority_lgb.pkl"
+
+
+def load_risk_model() -> Any | None:
+    try:
+        model = joblib.load(MODEL_PATH)
+        print(f"Loaded LightGBM risk model from {MODEL_PATH}", file=sys.stderr)
+        return model
+    except Exception as error:
+        print(f"Could not load LightGBM risk model: {error}; using deterministic fallback.", file=sys.stderr)
+        return None
+
+
+RISK_MODEL = load_risk_model()
+RISK_MODEL_STATUS = "loaded" if RISK_MODEL is not None else "fallback"
 
 
 def time_to_minutes(value: str) -> int:
@@ -29,6 +49,22 @@ def time_to_minutes(value: str) -> int:
 def minutes_to_time(value: int) -> str:
     normalized = value % 1440
     return f"{normalized // 60:02d}:{normalized % 60:02d}"
+
+def normalize_solver_request(request: dict[str, Any]) -> dict[str, Any]:
+    start = request.get("requestedStartTime", request.get("start_time", "00:00"))
+    duration = int(request.get("durationMinutes", request.get("duration_mins", 60)) or 60)
+    end = request.get("requestedEndTime") or minutes_to_time(time_to_minutes(start) + duration)
+    return {
+        **request,
+        "id": request.get("id", "unknown"),
+        "requestedDate": request.get("requestedDate", request.get("date", "")),
+        "requestedStartTime": start,
+        "requestedEndTime": end,
+        "durationMinutes": duration,
+        "lineType": request.get("lineType", request.get("line_type", "")),
+        "machineryDeployed": request.get("machineryDeployed", request.get("machinery_deployed", [])),
+        "status": request.get("status", "PENDING"),
+    }
 
 
 def normalize(value: str) -> str:
@@ -46,6 +82,51 @@ def normalized_window(request: dict[str, Any]) -> tuple[int, int]:
 def machinery(request: dict[str, Any]) -> set[str]:
     values = request.get("machineryDeployed") or []
     return {str(value).strip().lower() for value in values if str(value).strip()}
+
+
+def track_features(request: dict[str, Any]) -> dict[str, float]:
+    supplied = request.get("track_features") or request.get("features") or {}
+    return {
+        "track_degradation_index": float(supplied.get("track_degradation_index", request.get("track_degradation_index", request.get("severity", 0))) or 0),
+        "gmt": float(supplied.get("gmt", request.get("gmt", 0)) or 0),
+        "rail_age": float(supplied.get("rail_age", request.get("rail_age", request.get("asset_age_years", 0))) or 0),
+        "usfd_count": float(supplied.get("usfd_count", request.get("usfd_count", request.get("past_failure_count", 0))) or 0),
+        "surface_wear_index": float(supplied.get("surface_wear_index", request.get("surface_wear_index", request.get("deferred_count", 0))) or 0),
+        "current_speed_restriction": float(supplied.get("current_speed_restriction", request.get("current_speed_restriction", request.get("speedRestrictionKmH", 0))) or 0),
+    }
+
+
+def risk_score(request: dict[str, Any]) -> float:
+    features = track_features(request)
+    if RISK_MODEL is not None:
+        try:
+            row = pd.DataFrame([{
+                "severity": max(1, min(5, round(features["track_degradation_index"] or float(request.get("severity", 1))))),
+                "days_overdue": max(0, round(float(request.get("days_overdue", 0) or 0))),
+                "asset_age_years": features["rail_age"],
+                "past_failure_count": features["usfd_count"],
+                "deferred_count": features["surface_wear_index"],
+                "department": request.get("department", "ENGINEERING"),
+                "section": request.get("section", ""),
+            }])
+            return max(0.0, min(1.0, float(RISK_MODEL.predict_proba(row)[0][1])))
+        except Exception as error:
+            print(f"Risk inference failed for {request.get('id', 'unknown')}: {error}", file=sys.stderr)
+    raw = (features["track_degradation_index"] / 5) * 0.30 + min(features["gmt"] / 100, 1) * 0.15 + min(features["rail_age"] / 45, 1) * 0.15 + min(features["usfd_count"] / 8, 1) * 0.20 + min(features["surface_wear_index"] / 6, 1) * 0.10 + min(features["current_speed_restriction"] / 120, 1) * 0.10
+    return round(max(0.0, min(1.0, raw)), 6)
+
+
+def request_machines(request: dict[str, Any]) -> set[str]:
+    return {machine for machine in machinery(request) if any(token in machine for token in ("tamp", "ballast", "dgs", "bcm", "machine"))}
+
+
+def machine_conflict(left: dict[str, Any], right: dict[str, Any]) -> bool:
+    if not request_machines(left) & request_machines(right):
+        return False
+    left_start, left_end = normalized_window(left)
+    right_start, right_end = normalized_window(right)
+    transit = max(int(left.get("minimumSectionTransitMinutes", 60) or 60), int(right.get("minimumSectionTransitMinutes", 60) or 60))
+    return left_start < right_end + transit and right_start < left_end + transit
 
 
 def compatible(left: dict[str, Any], right: dict[str, Any]) -> bool:
@@ -80,6 +161,8 @@ def candidate_data(group: tuple[dict[str, Any], ...]) -> dict[str, Any]:
         "separate_duration": separate_duration,
         "bundled_duration": bundled_duration,
         "saved": max(0, separate_duration - bundled_duration),
+        "risk_score": max((risk_score(request) for request in group), default=0.0),
+        "machine_sequence": [machine for request in group for machine in sorted(request_machines(request))],
     }
 
 
@@ -156,6 +239,9 @@ def build_result(
             "hasOverlaps": False,
             "estimatedPassengerMinutesLost": 0,
             "delayWeightUsed": delay_weight,
+            "riskModelStatus": RISK_MODEL_STATUS,
+            "riskLambda": RISK_LAMBDA,
+            "solverStatus": "EMPTY",
         }
 
     groups: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
@@ -169,7 +255,7 @@ def build_result(
     for group in groups.values():
         upper_size = min(MAX_CANDIDATE_SIZE, len(group))
         for size in range(2, upper_size + 1):
-            for combination in combinations(candidate_group, size):
+            for combination in combinations(group, size):
                 if candidate_is_valid(combination):
                     data = candidate_data(combination)
                     blocked = any(
@@ -200,7 +286,13 @@ def build_result(
         if variables:
             model.Add(sum(variables) <= 1)
 
-    model.Maximize(sum(variable * round((candidate["saved"] - delay_weight * candidate["estimatedPassengerMinutesLost"]) * 100) for variable, candidate in zip(selected, candidates)))
+    for left_index, left_candidate in enumerate(candidates):
+        for right_index in range(left_index + 1, len(candidates)):
+            right_candidate = candidates[right_index]
+            if any(machine_conflict(left_request, right_request) for left_request in left_candidate["requests"] for right_request in right_candidate["requests"]):
+                model.Add(selected[left_index] + selected[right_index] <= 1)
+
+    model.Maximize(sum(variable * round((RISK_LAMBDA * candidate["risk_score"] * candidate["bundled_duration"] * 100) - (delay_weight * candidate["estimatedPassengerMinutesLost"] * 100) + candidate["saved"] * 10) for variable, candidate in zip(selected, candidates)))
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 5
     solver.parameters.num_search_workers = 8
@@ -234,6 +326,9 @@ def build_result(
             "totalSeparateDurationMinutes": candidate["separate_duration"],
             "savedDetentionMinutes": candidate["saved"],
             "conflictsResolvedCount": len(bundled_requests) * (len(bundled_requests) - 1) // 2,
+            "risk_score": candidate["risk_score"],
+            "machine_sequence": candidate["machine_sequence"],
+            "passenger_punctuality_impact_score": max(0.0, round(1 - candidate.get("estimatedPassengerMinutesLost", 0) / max(1, duration), 4)),
             "aiJustification": justification(bundled_requests, departments),
             "coordinationTasks": [
                 {
@@ -247,7 +342,7 @@ def build_result(
             ],
         })
 
-    standalone = [request for request in pending if request["id"] not in selected_ids]
+    standalone = [{**request, "risk_score": risk_score(request), "machine_sequence": sorted(request_machines(request))} for request in pending if request["id"] not in selected_ids]
     total_separate = sum(max(1, int(request.get("durationMinutes") or 0)) for request in pending)
     total_optimized = sum(window["durationMinutes"] for window in bundled_windows) + sum(max(1, int(request.get("durationMinutes") or 0)) for request in standalone)
     saved = max(0, total_separate - total_optimized)
@@ -268,6 +363,9 @@ def build_result(
         "hasOverlaps": compatible_pairs > 0,
         "estimatedPassengerMinutesLost": sum(candidate["estimatedPassengerMinutesLost"] for candidate in selected_candidates),
         "delayWeightUsed": delay_weight,
+        "riskModelStatus": RISK_MODEL_STATUS,
+        "riskLambda": RISK_LAMBDA,
+        "solverStatus": solver.StatusName(solver_status),
     }
 
 
@@ -288,9 +386,7 @@ def build_horizon_plan(
     affected_movements = affected_movements or []
 
     def risk_value(request: dict[str, Any]) -> int:
-        urgency = request.get("urgencyLevel")
-        urgency_score = {"Critical Emergency": 100, "Priority": 75, "Routine": 40}.get(urgency, 0)
-        return max(1, round(float(request.get("mlRisk", request.get("calculated_risk_score", urgency_score or 40)))))
+        return max(1, round(risk_score(request) * 100))
 
     def latest_day(request: dict[str, Any]) -> int:
         urgency = request.get("urgencyLevel")
@@ -395,6 +491,7 @@ def build_horizon_plan(
             "solveTimeMs": round(solver.WallTime() * 1000, 2),
             "estimatedPassengerMinutesLost": 0,
             "delayWeightUsed": delay_weight,
+            "riskModelStatus": RISK_MODEL_STATUS,
         }
 
     selected_by_day: dict[int, list[dict[str, Any]]] = {day_index: [] for day_index in range(horizon_days)}
@@ -429,7 +526,7 @@ def build_horizon_plan(
         for bundle, _, _, passenger_minutes_lost in bundle_data
         if solver.Value(bundle) == 1
     )
-    return {"horizonDays": horizon_days, "anchorDate": anchor_date, "dailyPlan": daily_plan, "totalRiskRetired": total_risk, "totalMinutesSaved": total_saved, "backlogUnscheduled": [request for request in pending if request["id"] not in scheduled_ids], "solverStatus": solver.StatusName(solver_status), "solveTimeMs": round(solver.WallTime() * 1000, 2), "estimatedPassengerMinutesLost": estimated_passenger_minutes_lost, "delayWeightUsed": delay_weight}
+    return {"horizonDays": horizon_days, "anchorDate": anchor_date, "dailyPlan": daily_plan, "totalRiskRetired": total_risk, "totalMinutesSaved": total_saved, "backlogUnscheduled": [request for request in pending if request["id"] not in scheduled_ids], "solverStatus": solver.StatusName(solver_status), "solveTimeMs": round(solver.WallTime() * 1000, 2), "estimatedPassengerMinutesLost": estimated_passenger_minutes_lost, "delayWeightUsed": delay_weight, "riskModelStatus": RISK_MODEL_STATUS}
 
 
 class SolverHandler(BaseHTTPRequestHandler):
@@ -462,7 +559,13 @@ class SolverHandler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", "0"))
             payload = json.loads(self.rfile.read(length))
-            result = build_result(payload.get("requests", []))
+            requests = [normalize_solver_request(request) for request in payload.get("requests", [])]
+            result = build_result(
+                requests,
+                payload.get("premium_train_windows", []),
+                float(payload.get("delay_weight", 0.5)),
+                payload.get("affected_movements", []),
+            )
             body = json.dumps(result).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")

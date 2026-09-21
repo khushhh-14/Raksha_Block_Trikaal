@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   X,
   Printer,
@@ -22,6 +22,9 @@ import { BlockRequest, UserRole, User } from '../types';
 import { TrainImpactWidget } from './TrainImpactWidget';
 import { AiCoPilotRecommendationEngine } from './AiCoPilotRecommendationEngine';
 import { downloadElementAsPdf } from '../utils/pdfGenerator';
+import { getSectionTimetable } from '../data/railwayOperations';
+import { validateGSRCompliance } from '../utils/gsrRuleEngine';
+import { GSRCompliancePanel } from './GSRCompliancePanel';
 
 interface RequestDetailModalProps {
   request: BlockRequest | null;
@@ -50,6 +53,7 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
   const deptConfig = DEPARTMENT_CONFIG[request.department];
   const isAdmin = userRole === 'SECTION_CONTROLLER';
+  const gsrCompliance = useMemo(() => validateGSRCompliance(request, getSectionTimetable(request.section), allRequests || [request]), [request, allRequests]);
 
   const getStatusBadge = (status: BlockRequest['status']) => {
     switch (status) {
@@ -205,6 +209,7 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           </div>
 
           {/* Department & Applicant Details */}
+          <GSRCompliancePanel result={gsrCompliance} compact />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 bg-blue-50/40 border border-blue-200/80 rounded-md">
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">
@@ -517,11 +522,13 @@ export const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
             {isAdmin && request.status === 'PENDING' && onOpenAdminAction && (
               <button
+                disabled={!gsrCompliance.isCompliant}
                 onClick={() => {
                   onClose();
                   onOpenAdminAction(request);
                 }}
-                className="px-4 py-2 text-xs font-bold text-white bg-purple-900 hover:bg-purple-950 rounded transition-colors shadow-sm flex items-center space-x-1.5 cursor-pointer"
+                className={`px-4 py-2 text-xs font-bold rounded transition-colors shadow-sm flex items-center space-x-1.5 ${gsrCompliance.isCompliant ? 'text-white bg-purple-900 hover:bg-purple-950 cursor-pointer' : 'text-slate-400 bg-slate-200 cursor-not-allowed'}`}
+                title={gsrCompliance.isCompliant ? 'Open Section Controller action' : 'Resolve G&SR violations before approval'}
               >
                 <ShieldCheck className="w-4 h-4 text-amber-400" />
                 <span>Take Section Controller Action (Sanction / Reject)</span>

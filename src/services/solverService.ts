@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { runCpSatSolver } from '../utils/cpSatSolver';
 
 const SOLVER_API_URL = (() => {
   try {
@@ -16,6 +17,15 @@ export interface SolverDefect {
   department: string;
   calculated_risk_score: number;
   required_duration_mins: number;
+  track_features?: {
+    track_degradation_index: number;
+    gmt: number;
+    rail_age: number;
+    usfd_count: number;
+    surface_wear_index: number;
+    current_speed_restriction: number;
+  };
+  machine_ids?: string[];
 }
 
 export interface SolverTimeWindow {
@@ -59,6 +69,9 @@ export interface OptimizedScheduleResponse {
   estimated_train_delay_mins: number;
   solver_status: string;
   execution_time_ms: number;
+  risk_score?: number;
+  machine_sequence?: string[];
+  passenger_punctuality_impact_score?: number;
 }
 
 export interface HorizonPlanDay {
@@ -183,6 +196,8 @@ export async function runOptimization(payload: SolverInputPayload): Promise<Opti
     return localGreedySchedule(payload);
   }
 }
+
+export const solveBlockSchedule = runCpSatSolver;
 
 function localHorizonPlan(requests: any[], horizonDays: number, anchorDate: string): HorizonPlanResponse {
   const dailyPlan: HorizonPlanDay[] = Array.from({ length: horizonDays }, (_, dayIndex) => ({ date: new Date(new Date(`${anchorDate}T00:00:00`).getTime() + dayIndex * 86400000).toISOString().slice(0, 10), dayIndex, bundledWindows: [], standalone: [], sectionLoadMinutes: {}, capacityUtilisationPercent: {} }));

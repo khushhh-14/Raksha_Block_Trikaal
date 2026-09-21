@@ -269,7 +269,7 @@ export const AiOptimizerModal: React.FC<AiOptimizerModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="border-b border-slate-200 bg-white px-4 py-3"><label className="flex items-center justify-between gap-3 text-xs font-bold text-slate-700"><span>Maintenance throughput ↔ Train punctuality <span className="font-mono text-[#003366]">{delayWeight.toFixed(1)}</span></span><input type="range" min="0" max="2" step="0.1" value={delayWeight} onChange={(event) => setDelayWeight(Number(event.target.value))} className="w-48 accent-amber-500" /></label>{solverResult.estimatedPassengerMinutesLost !== undefined && <div className="mt-1 text-[10px] text-slate-500">Estimated passenger minutes lost: {solverResult.estimatedPassengerMinutesLost}</div>}</div>
+        <div className="border-b border-slate-200 bg-white px-4 py-3"><label className="flex items-center justify-between gap-3 text-xs font-bold text-slate-700"><span>Maintenance throughput ↔ Train punctuality <span className="font-mono text-[#003366]">{delayWeight.toFixed(1)}</span></span><input type="range" min="0" max="2" step="0.1" value={delayWeight} onChange={(event) => setDelayWeight(Number(event.target.value))} className="w-48 accent-amber-500" /></label><div className="mt-1 flex flex-wrap gap-3 text-[10px] text-slate-500"><span>Estimated passenger minutes lost: {solverResult.estimatedPassengerMinutesLost ?? 0}</span>{solverResult.riskModelStatus && <span className="font-semibold text-emerald-700">ML risk model: {solverResult.riskModelStatus}</span>}</div></div>
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
@@ -521,6 +521,7 @@ export const AiOptimizerModal: React.FC<AiOptimizerModalProps> = ({
                                   <Clock className="w-3 h-3 mr-1 text-emerald-700" />
                                   Saved {Math.floor(bundle.savedDetentionMinutes / 60)}h {bundle.savedDetentionMinutes % 60}m Traffic Halt
                                 </span>
+                                <span className="text-[11px] font-semibold bg-red-50 text-red-800 border border-red-200 px-2 py-0.5 rounded">ML Risk: {(bundle.risk_score ?? 0).toFixed(2)}</span>
                               </div>
 
                               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 pt-1">
@@ -538,6 +539,8 @@ export const AiOptimizerModal: React.FC<AiOptimizerModalProps> = ({
                                   Separate Total: {Math.floor(bundle.totalSeparateDurationMinutes / 60)}h{' '}
                                   {bundle.totalSeparateDurationMinutes % 60}m
                                 </span>
+                                {bundle.machine_sequence && bundle.machine_sequence.length > 0 && <span className="text-[10px] font-semibold text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">Machines: {bundle.machine_sequence.join(', ')}</span>}
+                                {bundle.passenger_punctuality_impact_score !== undefined && <span className="text-[10px] font-semibold text-blue-800 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">Punctuality impact: {(bundle.passenger_punctuality_impact_score * 100).toFixed(0)}%</span>}
                               </div>
                             </div>
 
@@ -687,6 +690,7 @@ export const AiOptimizerModal: React.FC<AiOptimizerModalProps> = ({
                             <div className="text-[11px] text-slate-500 mt-0.5">
                               {req.section} • {req.requestedStartTime}-{req.requestedEndTime}
                             </div>
+                            <div className="mt-1 text-[10px] font-semibold text-red-700">ML Risk: {Number((req as BlockRequest & { risk_score?: number }).risk_score ?? 0).toFixed(2)}</div>
                           </div>
                           <span className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                             Clear for Sanction

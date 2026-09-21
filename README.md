@@ -92,6 +92,24 @@ pip install -r requirements.local.txt
 
 ### Run All Local Services
 
+For the SIH 2026 demo sequence, copy `.env.example` to `.env.local`, fill in the Supabase anon key, and run the platform launcher:
+
+```bash
+./run_system.sh
+```
+
+On Windows, run `run_system.bat`. The frontend opens on `http://localhost:5173/` and the unified FastAPI solver is available on `http://localhost:8000/`.
+
+For a production-like container run:
+
+```bash
+docker compose --env-file .env.local up --build
+```
+
+The web container serves the built Vite app on port 5173 and proxies `/api/*` to the solver container on port 8000.
+
+The legacy split-terminal workflow remains available:
+
 Run each command in a separate terminal from the repository root. Keep all three terminals running:
 
 ```bash
@@ -105,7 +123,7 @@ python src/ml/api_server.py
 npm run dev
 ```
 
-The services are available at `http://localhost:8000`, `http://localhost:8001`, and `http://localhost:3000`. Open the frontend at http://localhost:3000/.
+The services are available at `http://localhost:8000`, `http://localhost:8001`, and `http://localhost:5173`. Open the frontend at http://localhost:5173/.
 
 The ML API loads the optional `models/defect_priority_lgb.pkl` artifact when present and otherwise serves its deterministic fallback. Local ML and FastAPI development dependencies are listed in `requirements.local.txt`. Vercel uses the minimal root `requirements.txt`, which contains only OR-Tools for the CP-SAT serverless function. The Gemini Co-Pilot chat uses the server-side `GEMINI_API_KEY` and optional `GEMINI_MODEL` environment variables. `VITE_GEMINI_API_KEY` is accepted temporarily for existing deployments, but should be migrated to `GEMINI_API_KEY` because `VITE_` values are intended for browser exposure.
 
@@ -113,19 +131,28 @@ To enable model-generated Co-Pilot answers in Vercel, open the project settings 
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in your own values before deploying. Supabase credentials are required at runtime. The ML risk scoring API uses port `8001`, while the CP-SAT solver uses port `8000`.
+Copy `.env.example` to `.env.local` and fill in your own values before running locally. Supabase credentials are required at runtime. The ML risk scoring API uses port `8001`, while the unified CP-SAT/FastAPI solver uses port `8000`. Never commit `.env.local`.
 
 ## Available Scripts
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start the Vite development server on port 3000 |
+| `npm run dev` | Start the Vite development server on port 5173 |
 | `npm run cp-sat` | Start the Python CP-SAT optimizer service on port 8000 |
 | `python src/ml/api_server.py` | Start the ML risk scoring API on port 8001 |
 | `npm run build` | Type-check and build the production bundle to `dist/` |
 | `npm run preview` | Preview the production build locally |
 | `npm run lint` | Run TypeScript type checking with `tsc --noEmit` |
 | `npm run clean` | Remove `dist/` and `server.js` |
+
+## GitHub Push
+
+```bash
+git remote set-url origin https://github.com/khushhh-14/Raksha_Block_Trikaal.git
+git add .
+git commit -m "Prepare SIH 2026 production startup workflow"
+git push -u origin main
+```
 
 ## Login Credentials (Demo)
 
