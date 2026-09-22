@@ -6,7 +6,7 @@ import { minutesToChartTime, parseStringChartData, StringChartBlock, StringChart
 
 interface MareyStringChartProps { currentUser: User; allRequests: BlockRequest[]; activeZone?: RailwayZoneCode; onViewRequestDetail: (request: BlockRequest) => void; }
 const timeX = (minutes: number): number => 190 + (minutes / 1440) * 1210;
-const trainColor = (type: string): string => type.toLowerCase().includes('freight') || type.toLowerCase().includes('goods') ? '#16a34a' : type.toLowerCase().includes('rajdhani') || type.toLowerCase().includes('vande') || type.toLowerCase().includes('express') ? '#d49a00' : '#2563eb';
+const trainColor = (type: string, name = ''): string => type.toLowerCase().includes('freight') || type.toLowerCase().includes('goods') ? '#16a34a' : /rajdhani|vande bharat/i.test(`${type} ${name}`) ? '#d49a00' : '#2563eb';
 const blockColor = (department: StringChartBlock['department']): string => department === 'ENGINEERING' ? '#f59e0b' : department === 'ST' ? '#4f46e5' : '#dc2626';
 
 export const MareyStringChart: React.FC<MareyStringChartProps> = ({ currentUser, allRequests, activeZone = 'ALL', onViewRequestDetail }) => {
@@ -19,7 +19,7 @@ export const MareyStringChart: React.FC<MareyStringChartProps> = ({ currentUser,
   const pathForTrain = (train: StringChartTrain): string => train.points.reduce((path, point, index) => {
     if (index === 0) return `M ${timeX(point.arrival)} ${stationY(point.station)}`;
     const previous = train.points[index - 1];
-    const conflict = blocks.find((block) => block.start < point.arrival && block.end > previous.departure);
+    const conflict = blocks.find((block) => block.start < point.arrival && block.end > previous.departure && [block.startStation, block.endStation].includes(previous.station));
     if (!conflict) return `${path} L ${timeX(point.arrival)} ${stationY(point.station)}`;
     return `${path} L ${timeX(conflict.start)} ${stationY(previous.station)} L ${timeX(conflict.end)} ${stationY(previous.station)} L ${timeX(point.arrival)} ${stationY(point.station)}`;
   }, '');

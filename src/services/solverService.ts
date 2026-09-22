@@ -1,13 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { runCpSatSolver } from '../utils/cpSatSolver';
 
-const SOLVER_API_URL = (() => {
-  try {
-    return ((import.meta as any).env && (import.meta as any).env.VITE_SOLVER_API_URL) || 'http://localhost:8000';
-  } catch {
-    return 'http://localhost:8000';
-  }
-})();
+const SOLVER_API_URL = 'http://localhost:8000';
 
 const SAFETY_BUFFER_MINUTES = 15;
 
@@ -72,6 +66,18 @@ export interface OptimizedScheduleResponse {
   risk_score?: number;
   machine_sequence?: string[];
   passenger_punctuality_impact_score?: number;
+}
+
+interface UnifiedSolveResponse {
+  status: string;
+  block_id: string;
+  recommended_start: string;
+  recommended_end: string;
+  risk_score: number;
+  machine_allocated: string;
+  gsr_compliant: boolean;
+  affected_trains: string[];
+  delays_summary: { total_delay_minutes?: number };
 }
 
 export interface HorizonPlanDay {
@@ -188,11 +194,52 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function toUnifiedSolvePayload(payload: SolverInputPayload): Record<string, unknown> {
+  const defect = [...payload.defects].sort((left, right) => right.calculated_risk_score - left.calculated_risk_score)[0];
+  const window = payload.available_time_windows.find((candidate) => candidate.section === defect?.section);
+  return {
+    block_id: defect?.defect_id || 'BLOCK-UNASSIGNED',
+    section: defect?.section || window?.section || '',
+    requested_start: window?.start_time_hhmm || '00:00',
+    requested_end: window?.end_time_hhmm || '04:00',
+    duration_hours: Math.max(1 / 60, (defect?.required_duration_mins || 60) / 60),
+    department: defect?.department || 'ENGINEERING',
+    machine_allocated: defect?.machine_ids?.join(', ') || '',
+    track_age: defect?.track_features?.rail_age || 0,
+    gmt: defect?.track_features?.gmt || 0,
+    usfd_faults: defect?.track_features?.usfd_count || 0,
+    tsr_active: Boolean(defect?.track_features?.current_speed_restriction),
+  };
+}
+
+function mapUnifiedSolveResult(result: UnifiedSolveResponse, started: number): OptimizedScheduleResponse {
+  const duration = Math.max(1, toMinutes(result.recommended_end) - toMinutes(result.recommended_start));
+  return {
+    schedule_blocks: [{
+      defect_id: result.block_id,
+      section: '',
+      department: '',
+      start_time_hhmm: result.recommended_start,
+      end_time_hhmm: result.recommended_end,
+      duration_mins: duration,
+      priority_rank: 1,
+    }],
+    total_risk_reduced: result.risk_score * duration,
+    estimated_train_delay_mins: result.delays_summary?.total_delay_minutes || 0,
+    solver_status: result.status,
+    execution_time_ms: Number((performance.now() - started).toFixed(2)),
+    risk_score: result.risk_score,
+    machine_sequence: result.machine_allocated ? [result.machine_allocated] : [],
+  };
+}
+
 export async function runOptimization(payload: SolverInputPayload): Promise<OptimizedScheduleResponse> {
+  const started = performance.now();
   try {
-    return await postJson<OptimizedScheduleResponse>('/solver/optimize', payload);
+    const result = await postJson<UnifiedSolveResponse>('/api/v1/solve', toUnifiedSolvePayload(payload));
+    return mapUnifiedSolveResult(result, started);
   } catch (error) {
-    console.warn('CP-SAT backend unavailable; using local greedy scheduling fallback.', error);
+    console.warn('Unified CP-SAT backend unavailable; using local optimization fallback.', error);
     return localGreedySchedule(payload);
   }
 }

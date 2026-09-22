@@ -1,20 +1,22 @@
 import { BlockRequest } from '../types';
 import { SECTION_TIMETABLE, TRAIN_MASTER } from '../data/railwayOperations';
 
-export interface StringChartStation { code: string; name: string; kilometer: number; }
+export interface StringChartStation { code: string; name: string; kilometer: number; positionPercent?: number; }
 export interface StringChartPoint { station: string; arrival: number; departure: number; }
 export interface StringChartTrain { trainNumber: string; trainName: string; type: string; priority: string; sectionSpeed: string; points: StringChartPoint[]; }
-export interface StringChartBlock { id: string; department: BlockRequest['department']; section: string; start: number; end: number; startStation: string; endStation: string; machine: string; status: BlockRequest['status']; }
+export interface StringChartBlock { id: string; department: BlockRequest['department']; section: string; start: number; end: number; start_minute: number; end_minute: number; startStation: string; endStation: string; affectedStationSegment: string; machine: string; status: BlockRequest['status']; }
 
 const timeToMinutes = (value: string): number => { const [hours, minutes] = (value || '00:00').split(':').map(Number); return Math.max(0, Math.min(1440, (hours || 0) * 60 + (minutes || 0))); };
 const sectionStations = (section: string): string[] => section.split('-').map((part) => part.trim().toUpperCase()).filter(Boolean);
 const stationName = (code: string): string => ({ DLI: 'Delhi', NDLS: 'New Delhi', DEC: 'Delhi Cantt', GZB: 'Ghaziabad', ALJN: 'Aligarh Jn', TDL: 'Tundla Jn', CNB: 'Kanpur', GGN: 'Gurgaon', MTC: 'Meerut City', PWL: 'Palwal', MTJ: 'Mathura Jn', FDB: 'Faridabad', ST: 'Surat', VAPI: 'Vapi' }[code] || code);
+const stationKilometers: Record<string, number> = { NDLS: 0, GZB: 25, ALJN: 125, TDL: 200, CNB: 435, DLI: 0, DEC: 10, GGN: 35, MTC: 70, PWL: 50, MTJ: 150, FDB: 25, VAPI: 190, ST: 260 };
 
 const routeStations = (): StringChartStation[] => {
   const seen = new Set<string>();
   const stations: StringChartStation[] = [];
-  SECTION_TIMETABLE.forEach((entry, index) => sectionStations(entry.section).forEach((code) => { if (!seen.has(code)) { seen.add(code); stations.push({ code, name: stationName(code), kilometer: index }); } }));
-  return stations;
+  SECTION_TIMETABLE.forEach((entry, index) => sectionStations(entry.section).forEach((code) => { if (!seen.has(code)) { seen.add(code); stations.push({ code, name: stationName(code), kilometer: stationKilometers[code] ?? index * 25 }); } }));
+  const maxKilometer = Math.max(...stations.map((station) => station.kilometer), 1);
+  return stations.sort((left, right) => left.kilometer - right.kilometer).map((station) => ({ ...station, positionPercent: Number((station.kilometer / maxKilometer * 100).toFixed(2)) }));
 };
 
 export const parseStringChartData = (requests: BlockRequest[]): { stations: StringChartStation[]; trains: StringChartTrain[]; blocks: StringChartBlock[] } => {
@@ -25,7 +27,7 @@ export const parseStringChartData = (requests: BlockRequest[]): { stations: Stri
     records.forEach((record) => { const [first, second] = sectionStations(record.section); const from = record.direction === 'DOWN' ? second : first; const to = record.direction === 'DOWN' ? first : second; points.push({ station: from, arrival: timeToMinutes(record.departureTime), departure: timeToMinutes(record.departureTime) }); points.push({ station: to, arrival: timeToMinutes(record.arrivalTime), departure: timeToMinutes(record.departureTime) }); });
     return { trainNumber: master.trainNumber, trainName: master.trainName, type: master.type, priority: master.priorityClass, sectionSpeed: master.type.toLowerCase().includes('freight') ? '75 km/h' : '130 km/h', points };
   }).filter((train) => train.points.length > 0);
-  const blocks = requests.filter((request) => ['PENDING', 'APPROVED', 'MODIFIED_APPROVED'].includes(request.status)).map((request) => { const start = timeToMinutes(request.approvedStartTime || request.requestedStartTime); let end = timeToMinutes(request.approvedEndTime || request.requestedEndTime); if (end <= start) end = Math.min(1440, start + Math.max(request.durationMinutes, 15)); return { id: request.id, department: request.department, section: request.section, start, end, startStation: request.stationFrom.split('(').pop()?.replace(')', '').trim() || request.stationFrom, endStation: request.stationTo.split('(').pop()?.replace(')', '').trim() || request.stationTo, machine: request.machineryDeployed.join(', ') || request.machineryText || 'Not allocated', status: request.status }; });
+  const blocks = requests.filter((request) => ['PENDING', 'APPROVED', 'MODIFIED_APPROVED'].includes(request.status)).map((request) => { const start = timeToMinutes(request.approvedStartTime || request.requestedStartTime); let end = timeToMinutes(request.approvedEndTime || request.requestedEndTime); if (end <= start) end = Math.min(1440, start + Math.max(request.durationMinutes, 15)); const startStation = request.stationFrom.split('(').pop()?.replace(')', '').trim().toUpperCase() || request.stationFrom.toUpperCase(); const endStation = request.stationTo.split('(').pop()?.replace(')', '').trim().toUpperCase() || request.stationTo.toUpperCase(); return { id: request.id, department: request.department, section: request.section, start, end, start_minute: start, end_minute: end, startStation, endStation, affectedStationSegment: `${startStation} - ${endStation}`, machine: request.machineryDeployed.join(', ') || request.machineryText || 'Not allocated', status: request.status }; });
   return { stations, trains, blocks };
 };
 

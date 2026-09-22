@@ -62,14 +62,17 @@ export function validateGSRCompliance(blockRequest: BlockRequest, timetable: Sec
   const sameSection = activeBlocks.filter((active) => active.id !== blockRequest.id && active.section === blockRequest.section && active.status !== 'REJECTED');
   const departments = new Set(sameSection.map((active) => active.department).concat(blockRequest.department));
   const aligned = sameSection.every((active) => active.startKm === blockRequest.startKm && active.endKm === blockRequest.endKm && active.lineType === blockRequest.lineType);
-  const shadowRule: GSRRuleResult = departments.size < 2 || (blockRequest.shadowBlockEligible && aligned)
-    ? { ruleId: 'GSR-SHD-04', title: 'Shadow Block Alignment', passed: true, message: departments.size < 2 ? 'No multi-department shadow block alignment is required.' : 'All departments share the same isolation zone and safety margins.' }
-    : { ruleId: 'GSR-SHD-04', title: 'Shadow Block Alignment', passed: false, message: 'Violation: Multi-department work is not aligned to one isolation zone and safety margin.', remediation: 'Align department block requests to identical section, KM limits, line, and safety margins before approval.' };
+  const shadowDepartments = new Set(sameSection.map((active) => active.department).concat(blockRequest.department));
+  const hasCompleteShadowBundle = ['ENGINEERING', 'ST', 'TRD'].every((department) => shadowDepartments.has(department as BlockRequest['department']));
+  const shadowRequired = sameSection.length > 0;
+  const shadowRule: GSRRuleResult = !shadowRequired || (blockRequest.shadowBlockEligible && aligned && hasCompleteShadowBundle)
+    ? { ruleId: 'GSR-SHD-04', title: 'Shadow Block Bundling', passed: true, message: shadowRequired ? 'Civil, S&T, and TRD share the same corridor segment and isolation zone.' : 'No co-occupying department block requires shadow bundling.' }
+    : { ruleId: 'GSR-SHD-04', title: 'Shadow Block Bundling', passed: false, message: 'Violation: Co-occupying work must be bundled for Civil, S&T, and TRD on one corridor segment.', remediation: 'Add the missing department request and align section, KM limits, line, and shadow-block safety margins.' };
 
   const needsTSR = Boolean(blockRequest.trafficBlockRequired || blockRequest.speedRestrictionKmH);
-  const tsrRule: GSRRuleResult = !needsTSR || Boolean(blockRequest.cautionOrderDetails)
-    ? { ruleId: 'GSR-PSR-05', title: 'Speed Restriction Buffer', passed: true, message: 'TSR/caution notice is available for adjacent running lines.' }
-    : { ruleId: 'GSR-PSR-05', title: 'Speed Restriction Buffer', passed: false, message: 'Violation: No temporary speed restriction caution notice is attached.', remediation: 'Issue and attach a TSR caution notice for adjacent running lines before dispatch.' };
+  const tsrRule: GSRRuleResult = !needsTSR || Boolean(blockRequest.cautionOrderDetails && /30\s*(?:km\/h|kmph)|tsr|adjacent/i.test(blockRequest.cautionOrderDetails))
+    ? { ruleId: 'GSR-PSR-05', title: 'Speed Restriction Caution', passed: true, message: '30 km/h TSR/caution notice is issued for adjacent running lines.' }
+    : { ruleId: 'GSR-PSR-05', title: 'Speed Restriction Caution', passed: false, message: 'Violation: The required 30 km/h TSR caution for adjacent tracks is not issued.', remediation: 'Issue and attach a 30 km/h TSR caution order for adjacent running lines before dispatch.' };
 
   const rules = [headwayRule, powerRule, signalRule, shadowRule, tsrRule];
   return { isCompliant: rules.every((rule) => rule.passed), passedRules: rules.filter((rule) => rule.passed), violations: rules.filter((rule) => !rule.passed) };
