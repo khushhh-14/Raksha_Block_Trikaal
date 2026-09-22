@@ -16,7 +16,7 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
   className = '',
   compact = false,
 }) => {
-  const currentZoneInfo = activeZone !== 'ALL' ? ZONAL_RAILWAYS[activeZone] : null;
+  const zoneInfo = activeZone !== 'ALL' ? ZONAL_RAILWAYS[activeZone] : null;
 
   return (
     <div className={`relative inline-flex min-w-0 max-w-full items-center ${className}`}>
@@ -66,9 +66,9 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({
         </div>
       </div>
 
-      {currentZoneInfo && !compact && (
+      {zoneInfo && !compact && (
         <span className="hidden xl:inline-flex items-center ml-2 px-2 py-0.5 rounded text-[10px] font-mono bg-blue-900/80 text-amber-300 border border-blue-700/80">
-          HQ: {currentZoneInfo.headquarters}
+          HQ: {zoneInfo.headquarters}
         </span>
       )}
     </div>

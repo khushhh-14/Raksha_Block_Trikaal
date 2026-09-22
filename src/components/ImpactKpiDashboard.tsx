@@ -62,7 +62,7 @@ const formatDate = (value: string): string => {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 };
 
-const defaultTrend = (hours: number): SavingsPoint[] => Array.from({ length: 30 }, (_, index) => ({
+const baseTrend = (hours: number): SavingsPoint[] => Array.from({ length: 30 }, (_, index) => ({
   date: `Day ${index + 1}`,
   hoursSaved: Number(((hours / 30) * (index + 1)).toFixed(1)),
 }));
@@ -94,29 +94,29 @@ export const ImpactKpiDashboard: React.FC<ImpactKpiDashboardProps> = ({
     };
   }, [allRequests]);
 
-  const effectiveMaintenanceDowntimeHours = sharedOperations.hasSharedRequests
+  const maintLoss = sharedOperations.hasSharedRequests
     ? sharedOperations.maintenanceHours
     : maintenanceDowntimeHours;
-  const effectiveTotalMaintenanceHours = sharedOperations.hasSharedRequests
+  const totalMaint = sharedOperations.hasSharedRequests
     ? sharedOperations.maintenanceHours
     : totalMaintenanceHours;
-  const effectiveBundledHours = sharedOperations.hasSharedRequests
+  const bundleHrs = sharedOperations.hasSharedRequests
     ? sharedOperations.bundledHours
     : bundledHours;
-  const effectiveTrackHours = sharedOperations.hasSharedRequests
+  const trackHrs = sharedOperations.hasSharedRequests
     ? Math.max(totalTrackHours, sharedOperations.capacityHours)
     : totalTrackHours;
 
   const metrics = useMemo<ComparisonMetric[]>(() => {
-    const manualAvailability = effectiveTrackHours > 0
-      ? clampPercent(((effectiveTrackHours - effectiveMaintenanceDowntimeHours) / effectiveTrackHours) * 100)
+    const manualAvailability = trackHrs > 0
+      ? clampPercent(((trackHrs - maintLoss) / trackHrs) * 100)
       : 0;
-    const optimizedDowntime = optimizedMaintenanceDowntimeHours ?? Math.max(0, effectiveMaintenanceDowntimeHours - monthlyTrackHoursSaved);
-    const aiAvailability = effectiveTrackHours > 0
-      ? clampPercent(((effectiveTrackHours - optimizedDowntime) / effectiveTrackHours) * 100)
+    const optimizedDowntime = optimizedMaintenanceDowntimeHours ?? Math.max(0, maintLoss - monthlyTrackHoursSaved);
+    const aiAvailability = trackHrs > 0
+      ? clampPercent(((trackHrs - optimizedDowntime) / trackHrs) * 100)
       : 0;
-    const shadowUtilization = effectiveTotalMaintenanceHours > 0
-      ? clampPercent((effectiveBundledHours / effectiveTotalMaintenanceHours) * 100)
+    const shadowUtilization = totalMaint > 0
+      ? clampPercent((bundleHrs / totalMaint) * 100)
       : 0;
     const delayReduction = detentionBeforeMins > 0
       ? clampPercent(((detentionBeforeMins - detentionAfterMins) / detentionBeforeMins) * 100)
@@ -128,9 +128,9 @@ export const ImpactKpiDashboard: React.FC<ImpactKpiDashboardProps> = ({
       { key: 'delay', label: 'Cascading Delay Reduction', icon: TrendingDown, before: detentionBeforeMins, after: detentionAfterMins, mode: 'reduction', note: `${detentionBeforeMins.toFixed(0)} to ${detentionAfterMins.toFixed(0)} detention minutes`, accent: '#34d399' },
       { key: 'saved', label: 'Monthly Track Hours Saved', icon: Landmark, before: 0, after: monthlyTrackHoursSaved, mode: 'hours', note: 'Cumulative shadow-block savings', accent: '#fbbf24' },
     ];
-  }, [detentionAfterMins, detentionBeforeMins, effectiveBundledHours, effectiveMaintenanceDowntimeHours, effectiveTotalMaintenanceHours, effectiveTrackHours, monthlyTrackHoursSaved, optimizedMaintenanceDowntimeHours]);
+  }, [detentionAfterMins, detentionBeforeMins, bundleHrs, maintLoss, totalMaint, trackHrs, monthlyTrackHoursSaved, optimizedMaintenanceDowntimeHours]);
 
-  const trend = savingsTrend?.length ? savingsTrend : defaultTrend(monthlyTrackHoursSaved);
+  const trend = savingsTrend?.length ? savingsTrend : baseTrend(monthlyTrackHoursSaved);
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-slate-700 bg-[#071b38] text-slate-50 shadow-[0_20px_50px_rgba(2,6,23,0.45)]" aria-labelledby="impact-kpi-title">

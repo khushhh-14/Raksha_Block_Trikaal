@@ -49,7 +49,6 @@ export const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      // Format to IST
       const timeStr = now.toLocaleTimeString('en-IN', {
         timeZone: 'Asia/Kolkata',
         hour12: false,
@@ -112,7 +111,6 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header id="raksha-header" className="sticky top-0 z-50 w-full shadow-md bg-[#000075] text-white">
-      {/* Topmost Official Bar with Tri-color Accent & Gold Typography */}
       <div className="bg-[#00005a] border-b border-[#000085] px-3 sm:px-4 py-1.5 text-[11px] text-slate-200">
         <div className="max-w-[1800px] w-full mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center space-x-2 min-w-0">
@@ -132,9 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Main Top Navigation Header with IRCTC / CRIS / FOIS Emblem Crest */}
       <div className="max-w-[1800px] w-full mx-auto px-3 sm:px-6 py-2.5 sm:py-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
-        {/* Logo & Emblem Brand Area */}
         <div className="flex items-center space-x-2.5 sm:space-x-3.5 min-w-0 max-w-full">
           {/* Official logo displayed only inside a white circular mark. */}
           <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-amber-400 bg-white shadow-md ring-2 ring-blue-900/40 sm:h-12 sm:w-12">
@@ -166,9 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right Action & Role Bar with Zone Selector */}
         <div className="mobile-header-actions flex w-full sm:w-auto flex-wrap items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
-          {/* Integrated Pan-India Zone Selector */}
           {onSelectZone && (
             <div className="flex min-w-0 max-w-full flex-1 sm:flex-none items-center">
               <ZoneSelector
@@ -181,7 +175,6 @@ export const Header: React.FC<HeaderProps> = ({
 
           {currentUser ? (
             <>
-              {/* Officer Role & Designation Badge */}
               <div className="hidden lg:flex items-center bg-blue-950/70 border border-blue-800 rounded-lg px-3 py-1.5 text-left">
                 <div className="w-7 h-7 rounded-full bg-white/10 text-amber-400 flex items-center justify-center mr-2.5 font-bold text-xs">
                   {currentUser.avatarBadge}
@@ -206,7 +199,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
 
-              {/* Mobile / Tablet Role Badge */}
               <div className="lg:hidden flex items-center">
                 <span
                   className={`inline-flex items-center px-2 py-1 rounded text-[10px] sm:text-[11px] font-semibold border ${badgeInfo?.bg}`}
@@ -217,7 +209,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
 
-              {/* Interactive Real-Time Notification Bell */}
               <button
                 id="btn-notification-bell"
                 onClick={onOpenNotificationCenter}
@@ -233,7 +224,6 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </button>
 
-              {/* Mandatory Logout / Switch Role Button */}
               <button
                 id="btn-logout-switch-role"
                 onClick={() => setShowLogoutModal(true)}
