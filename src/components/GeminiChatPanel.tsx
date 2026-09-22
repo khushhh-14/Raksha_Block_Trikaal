@@ -93,12 +93,12 @@ export const GeminiChatPanel: React.FC<GeminiChatPanelProps> = ({ currentUser, a
       });
       setMessages((current) => [
         ...current,
-        { role: 'assistant', text: result.reply, degradedReason: result.degraded ? (result.degradedReason || 'Gemini unavailable') : undefined },
+        { role: 'assistant', text: result.reply, degradedReason: result.degraded ? (result.degradedReason || 'Raksha-Saarthi service unavailable') : undefined },
       ]);
     } catch (error) {
-      console.error('Gemini Co-Pilot request failed:', error);
+      console.error('Raksha-Saarthi Chat request failed:', error);
       const message = error instanceof Error ? error.message : 'Unknown Gemini service error.';
-      setMessages((current) => [...current, { role: 'assistant', local: true, text: `I could not reach the Co-Pilot service: ${message}` }]);
+      setMessages((current) => [...current, { role: 'assistant', local: true, text: `I could not reach Raksha-Saarthi Chat: ${message}` }]);
     } finally {
       setIsSending(false);
     }
@@ -110,15 +110,15 @@ export const GeminiChatPanel: React.FC<GeminiChatPanelProps> = ({ currentUser, a
         type="button"
         onClick={() => setIsOpen((open) => !open)}
         className="inline-flex min-h-8 items-center gap-1.5 rounded border border-amber-400 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-indigo-950 shadow-sm ring-1 ring-amber-200 hover:bg-amber-100"
-        title="Open Gemini Co-Pilot chat"
+        title="Open Raksha-Saarthi Chat"
       >
         <MessageCircle className="h-3.5 w-3.5" />
-        Co-Pilot Chat
+        Raksha-Saarthi Chat
       </button>
       {isOpen && (
         <div className="fixed inset-x-3 bottom-3 z-[70] flex h-[min(78dvh,520px)] max-h-[calc(100dvh-1.5rem)] w-auto min-w-0 flex-col overflow-hidden rounded-xl border border-slate-300 bg-white shadow-2xl sm:right-4 sm:inset-x-auto sm:bottom-4 sm:h-[min(72dvh,520px)] sm:w-[min(380px,calc(100vw-2rem))]">
           <div className="flex shrink-0 items-center justify-between border-b border-indigo-200 bg-indigo-950 px-3 py-2.5 text-white">
-            <span className="flex min-w-0 items-center gap-1.5 text-xs font-bold"><Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" /> <span className="truncate">Gemini Co-Pilot</span></span>
+            <span className="flex min-w-0 items-center gap-1.5 text-xs font-bold"><Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" /> <span className="truncate">Raksha-Saarthi Chat</span></span>
             <button type="button" onClick={() => setIsOpen(false)} className="rounded p-1.5 hover:bg-white/10" title="Close chat" aria-label="Close chat"><X className="h-4 w-4" /></button>
           </div>
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3 text-xs">
@@ -132,7 +132,7 @@ export const GeminiChatPanel: React.FC<GeminiChatPanelProps> = ({ currentUser, a
                 )}
               </div>
             ))}
-            {isSending && <div className="flex items-center gap-1.5 text-slate-400"><LoaderCircle className="h-3.5 w-3.5 animate-spin" /> Co-Pilot is thinking...</div>}
+            {isSending && <div className="flex items-center gap-1.5 text-slate-400"><LoaderCircle className="h-3.5 w-3.5 animate-spin" /> Raksha-Saarthi is thinking...</div>}
           </div>
           <form onSubmit={sendMessage} className="flex shrink-0 gap-2 border-t border-slate-200 p-2">
             <input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ask the controller assistant..." className="min-w-0 flex-1 rounded border border-slate-300 px-2 py-2 text-xs outline-none focus:border-indigo-500" />

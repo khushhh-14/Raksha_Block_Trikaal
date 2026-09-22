@@ -96,8 +96,6 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
     hindiTitle: string;
     title: string;
     subtitle: string;
-    designationFull: string;
-    serviceId: string;
     icon: React.ReactNode;
     colorClasses: {
       cardBorder: string;
@@ -121,8 +119,6 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
       hindiTitle: 'इंजीनियरिंग विभाग (पी-वे)',
       title: 'Engineering Department (P-Way)',
       subtitle: 'Permanent Way, Track Renewal & Heavy Earthworks',
-      designationFull: 'Sr. DEN (Delhi Division)',
-      serviceId: 'EMP-ENG-8821',
       icon: <Wrench className="w-6 h-6 text-blue-800" />,
       colorClasses: {
         cardBorder: 'border-blue-300 hover:border-blue-500',
@@ -150,8 +146,6 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
       hindiTitle: 'सिग्नल एवं दूरसंचार विभाग',
       title: 'S&T (Signalling & Telecom)',
       subtitle: 'Electronic Interlocking, Point Machines & Track Circuits',
-      designationFull: 'Sr. DSTE / Signalling (Delhi Division)',
-      serviceId: 'EMP-ST-4419',
       icon: <Radio className="w-6 h-6 text-emerald-800" />,
       colorClasses: {
         cardBorder: 'border-emerald-300 hover:border-emerald-500',
@@ -179,8 +173,6 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
       hindiTitle: 'विद्युत कर्षण वितरण विभाग',
       title: 'TRD (Traction & 25kV OHE)',
       subtitle: '25kV Overhead Equipment, Sub-stations & Power Isolations',
-      designationFull: 'DEE / TRD Traction (Delhi Division)',
-      serviceId: 'EMP-TRD-9032',
       icon: <Zap className="w-6 h-6 text-amber-800" />,
       colorClasses: {
         cardBorder: 'border-amber-300 hover:border-amber-500',
@@ -208,8 +200,6 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
       hindiTitle: 'मुख्य नियंत्रण कक्ष (प्रशासक)',
       title: 'Main Control - Section Controller',
       subtitle: 'Traffic Operating (DOM Office) & Train Movement Authority',
-      designationFull: 'Chief Controller / Operating (DOM Office, DLI)',
-      serviceId: 'EMP-CTRL-001',
       icon: <SlidersHorizontal className="w-6 h-6 text-purple-900" />,
       colorClasses: {
         cardBorder: 'border-purple-300 hover:border-purple-500 ring-1 ring-purple-200',
@@ -256,7 +246,6 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
               <p className="mt-2 text-xs sm:text-sm lg:text-base text-blue-100 max-w-3xl mx-auto leading-relaxed font-medium px-2">
                 भारतीय रेल स्वचालित ब्लॉक नियोजन एवं गलियारा अनुरक्षण प्रणाली
                 <span className="block text-slate-300 text-xs sm:text-sm font-normal mt-0.5">
-                  AI-Powered Automatic Block Planning & Corridor Maintenance Management System
                 </span>
               </p>
             </div>
@@ -308,19 +297,6 @@ export const LoginPortal: React.FC<LoginPortalProps> = ({
 
               {/* Card Body */}
               <div className="p-5 flex-1 flex flex-col gap-6">
-                {/* Officer Credential Dossier Simulation */}
-                <div className={`p-3.5 rounded-lg ${item.colorClasses.accentBg} border border-slate-200 text-xs`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-extrabold text-slate-900 text-sm">{item.user.name}</div>
-                      <div className="text-slate-600 text-xs mt-0.5">{item.designationFull}</div>
-                    </div>
-                    <div className="max-w-[35%] text-right text-[10px] text-slate-500 break-words">
-                      {item.serviceId}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Scope & Permissions List */}
                 <div className="min-h-[126px]">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center justify-between">

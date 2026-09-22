@@ -138,9 +138,8 @@ const localCopilotReply = (message: string, context: ChatContext): string => {
 // ---------------------------------------------------------------------------
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
-// Google retires model IDs regularly (gemini-1.5-* and gemini-2.0-flash are already shut down;
-// gemini-2.5-flash is scheduled for Oct 2026). Set GEMINI_MODEL in Vercel to override the first choice.
-const MODEL_CANDIDATES = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite', 'gemini-2.5-flash'];
+// Keep the default on currently supported Flash aliases; GEMINI_MODEL can override this in Vercel.
+const MODEL_CANDIDATES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest'];
 
 const cleanKey = (value?: string): string => (value || '').trim().replace(/^['"]|['"]$/g, '');
 const getApiKey = (): string => cleanKey(process.env.GEMINI_API_KEY) || cleanKey(process.env.VITE_GEMINI_API_KEY);
@@ -291,7 +290,7 @@ export default async function handler(request: IncomingMessage, response: Server
       return;
     }
 
-    const systemInstruction = `You are the Gemini Co-Pilot for RAKSHA-BLOCK (TRIKAAL), an Indian Railways engineering-block planning assistant that supports a Section Controller.
+    const systemInstruction = `You are Raksha-Saarthi Chat for RAKSHA-BLOCK (TRIKAAL), an Indian Railways engineering-block planning assistant that supports a Section Controller.
 
 CURRENT LIVE BOARD CONTEXT (synthetic demo data):
 ${buildContextSummary(context, message)}

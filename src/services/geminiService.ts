@@ -39,7 +39,7 @@ export async function chatWithAssistant(
       throw new Error(payload.error || `Chat API returned HTTP ${response.status}`);
     }
     if (!payload.reply) throw new Error('Chat API returned an empty response.');
-    if (payload.degraded) console.warn('[Co-Pilot] Gemini unavailable, fallback reply used:', payload.degradedReason);
+    if (payload.degraded) console.warn('[Raksha-Saarthi] Gemini unavailable, fallback reply used:', payload.degradedReason);
     return {
       reply: payload.reply,
       degraded: Boolean(payload.degraded),
