@@ -170,7 +170,7 @@ const parseCsv = (csv: string): Record<string, string>[] => {
 };
 
 export const normalizeRailwaySection = (value: string): string => {
-  const normalized = (value || '').toUpperCase().replace(/SECTION/g, '').replace(/[^A-Z0-9]/g, '');
+  const normalized = (value || '').toUpperCase().replace(/SECTION/g, '').replace(/DEMONSTRATIONCORRIDOR/g, '').replace(/[^A-Z0-9]/g, '');
   const aliases: Record<string, string> = {
     PANIPATAMBALA: 'PNPUMB',
     PANIPATAMBALASECTION: 'PNPUMB',
@@ -333,11 +333,11 @@ export function getDefectAutofill(defect: DefectRecord, department: 'ENGINEERING
 export function getSectionTimetable(section?: string): SectionTimetableRecord[] {
   if (!section || extractZoneCode(section) !== 'ALL' && ['NR', 'WR', 'CR', 'ER', 'SR'].includes(extractZoneCode(section))) {
     const zone = extractZoneCode(section);
-    if (zone === 'ALL' && !section) return SECTION_TIMETABLE;
-    return SECTION_TIMETABLE.filter((entry) => getCorridorZoneCode(entry.section) === zone);
+    if (zone === 'ALL' && !section) return operationalTimetable;
+    return operationalTimetable.filter((entry) => getCorridorZoneCode(entry.section) === zone);
   }
   const normalized = normalizeRailwaySection(section);
-  return SECTION_TIMETABLE.filter((entry) => normalizeRailwaySection(entry.section) === normalized);
+  return operationalTimetable.filter((entry) => normalizeRailwaySection(entry.section) === normalized);
 }
 
 export function getCorridorCapacity(section?: string): CorridorCapacityRecord[] {
@@ -389,6 +389,25 @@ const demoZoneCorridors = (zone: Exclude<RailwayZoneCode, 'ALL'>): CorridorCapac
   }));
 };
 
+const operationalTimetable: SectionTimetableRecord[] = [
+  ...SECTION_TIMETABLE,
+  ...Object.values(DEMO_ZONE_SECTIONS).flatMap((sections) => sections
+    .filter((section) => !SECTION_TIMETABLE.some((entry) => normalizeRailwaySection(entry.section) === normalizeRailwaySection(section)))
+    .flatMap((section) => TRAIN_MASTER.slice(0, 24).map((train, index) => {
+      const arrivalMinutes = index * 60 + 25;
+      const departureMinutes = arrivalMinutes + 8;
+      const formatTime = (minutes: number) => `${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+      return {
+        trainNumber: train.trainNumber,
+        section,
+        arrivalTime: formatTime(arrivalMinutes),
+        departureTime: formatTime(departureMinutes),
+        direction: index % 2 === 0 ? 'UP' : 'DOWN',
+        days: train.daysOfRun,
+      };
+    }))),
+];
+
 export function getDefects(selectedZone?: string): DefectRecord[] {
   const zone = extractZoneCode(selectedZone);
   if (zone === 'ALL') return DEFECTS;
@@ -435,7 +454,7 @@ export function getAffectedTrains(section = '', durationMinutes = 0): AffectedTr
   const blockDelay = Math.max(1, Math.round(Math.max(0, durationMinutes) / 60 * 12));
   const normalizedSection = normalizeRailwaySection(section);
 
-  return SECTION_TIMETABLE
+  return operationalTimetable
     .filter((entry) => !normalizedSection || normalizeRailwaySection(entry.section) === normalizedSection)
     .map((entry) => {
       const train = TRAIN_BY_NUMBER.get(entry.trainNumber);
@@ -459,11 +478,11 @@ export function getAffectedTrainMovements(request: Pick<BlockRequest, 'section' 
   const blockEnd = toMinutes(request.requestedEndTime);
   const movements: AffectedTrainMovement[] = [];
 
-  timetableRows.forEach((row) => {
-    const rowSection = row.section_id || row.section;
-    const rowTrainNumber = row.train_number || row.train_no;
-    const rowArrival = row.scheduled_arrival || row.arr_time;
-    const rowDeparture = row.scheduled_departure || row.dep_time;
+  operationalTimetable.forEach((row) => {
+    const rowSection = row.section;
+    const rowTrainNumber = row.trainNumber;
+    const rowArrival = row.arrivalTime;
+    const rowDeparture = row.departureTime;
     if (normalizeRailwaySection(rowSection) !== requestedSection) return;
     const train = TRAIN_BY_NUMBER.get(rowTrainNumber);
     if (!train) return;
@@ -509,12 +528,12 @@ export function getAffectedTrainsForBlock(sectionId: string, startTime: string, 
   const blockStart = toMinutes(startTime);
   const blockEnd = toMinutes(endTime);
 
-  return timetableRows
-    .filter((row) => normalizeRailwaySection(row.section_id || row.section) === normalizeRailwaySection(requestedSection))
+  return operationalTimetable
+    .filter((row) => normalizeRailwaySection(row.section) === normalizeRailwaySection(requestedSection))
     .map((row) => {
-      const rowTrainNumber = row.train_number || row.train_no;
-      const rowArrival = row.scheduled_arrival || row.arr_time;
-      const rowDeparture = row.scheduled_departure || row.dep_time;
+      const rowTrainNumber = row.trainNumber;
+      const rowArrival = row.arrivalTime;
+      const rowDeparture = row.departureTime;
       const train = TRAIN_BY_NUMBER.get(rowTrainNumber);
       if (!train || !intervalOverlaps(blockStart, blockEnd, toMinutes(rowArrival), toMinutes(rowDeparture))) return null;
       const delayMinutes = train.type.toLowerCase().includes('freight') || train.type.toLowerCase().includes('goods')
@@ -538,7 +557,13 @@ export function getSectionCapacitySummary(
   affectedTrainCount: number,
 ): SectionCapacitySummary {
   const normalizedSection = normalizeRailwaySection(request.section);
-  const capacity = capacityBySection.get(normalizedSection) || Array.from(capacityBySection.values()).find((entry) => normalizeRailwaySection(entry.sectionName) === normalizedSection);
+  const demoZone = Object.entries(DEMO_ZONE_SECTIONS).find(([, sections]) => sections.some((section) => normalizeRailwaySection(section) === normalizedSection));
+  const capacity = capacityBySection.get(normalizedSection)
+    || Array.from(capacityBySection.values()).find((entry) => normalizeRailwaySection(entry.sectionName) === normalizedSection)
+    || getCorridorCapacity(request.section)[0]
+    || (demoZone
+      ? demoZoneCorridors(demoZone[0] as Exclude<RailwayZoneCode, 'ALL'>).find((entry) => normalizeRailwaySection(entry.sectionId) === normalizedSection)
+      : undefined);
   if (!capacity) {
     return {
       section: request.section,
