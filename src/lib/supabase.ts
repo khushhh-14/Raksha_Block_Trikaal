@@ -2,6 +2,7 @@ import { createClient, RealtimeChannel } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import { AppNotification, BlockRequest, User, UserRole, Department, AiScheduleRecord, SupabaseSyncState } from '../types';
 import { OFFICIAL_ROLES, normalizePersonName } from '../data/mockData';
+import { matchesZoneScope } from '../data/railwayOperations';
 
 const readEnv = (key: string, fallback: string): string => {
   const value = (import.meta as any).env?.[key];
@@ -114,7 +115,7 @@ export function dbToBlockRequest(row: any): BlockRequest {
     'NR (Delhi Division)'
   );
 
-  const resolvedZoneCode: any = row.zone_code ?? row.zoneCode ?? (
+  const resolvedZoneCode: any = storedRequest.zone_code ?? storedRequest.zoneCode ?? (
     resolvedZone.includes('WR') ? 'WR' :
     resolvedZone.includes('CR') ? 'CR' :
     resolvedZone.includes('ER') ? 'ER' :
@@ -545,7 +546,7 @@ export async function fetchBlockRequestsFromSupabase(activeZone?: string): Promi
       });
       const parsed = Array.from(byRequestId.values());
       const filtered = activeZone && activeZone !== 'ALL'
-        ? parsed.filter((request) => request.zoneCode === activeZone || request.zone?.includes(activeZone) || request.division?.includes(activeZone))
+        ? parsed.filter((request) => matchesZoneScope(request, activeZone as BlockRequest['zoneCode']))
         : parsed;
       return { requests: filtered.sort((left, right) => right.submittedAt.localeCompare(left.submittedAt)), fromSupabase: true };
     }
