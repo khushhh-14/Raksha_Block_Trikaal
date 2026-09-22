@@ -342,7 +342,11 @@ export function getSectionTimetable(section?: string): SectionTimetableRecord[] 
 
 export function getCorridorCapacity(section?: string): CorridorCapacityRecord[] {
   const zone = extractZoneCode(section);
-  if (!section || zone !== 'ALL') return zone === 'ALL' ? CORRIDOR_CAPACITY : CORRIDOR_CAPACITY.filter((entry) => entry.zoneCode === zone);
+  if (!section || zone !== 'ALL') {
+    if (zone === 'ALL') return CORRIDOR_CAPACITY;
+    const matching = CORRIDOR_CAPACITY.filter((entry) => entry.zoneCode === zone);
+    return matching.length > 0 ? matching : demoZoneCorridors(zone);
+  }
   const normalized = normalizeRailwaySection(section);
   return CORRIDOR_CAPACITY.filter((entry) => (
     entry.sectionId === normalized ||
@@ -354,6 +358,35 @@ export function getCorridorCapacity(section?: string): CorridorCapacityRecord[] 
 const getCorridorZoneCode = (section: string): RailwayZoneCode => {
   const normalized = normalizeRailwaySection(section);
   return CORRIDOR_CAPACITY.find((corridor) => normalizeRailwaySection(corridor.sectionId) === normalized)?.zoneCode || 'ALL';
+};
+
+const DEMO_ZONE_SECTIONS: Record<Exclude<RailwayZoneCode, 'ALL'>, string[]> = {
+  NR: ['NDLS-GZB', 'GZB-ALJN', 'NDLS-PWL', 'PWL-MTJ', 'DLI-DEC', 'DEC-GGN', 'NZM-FDB', 'GZB-MTC', 'PNP-UMB', 'ROK-PNP'],
+  WR: ['MMCT-BVI', 'BVI-BOR', 'BOR-VAPI', 'VAPI-ST', 'ST-BRC', 'BRC-ADI', 'ADI-MAN', 'RTM-KOTA', 'BRC-GDA', 'BVI-SUR'],
+  CR: ['CSMT-KYN', 'KYN-LNL', 'LNL-PUNE', 'PUNE-STR', 'KYN-IGP', 'BPL-ET', 'ET-NGP', 'NGP-BSL', 'BSL-BD', 'KYN-DR'],
+  ER: ['SDAH-BWN', 'BWN-ASN', 'HWH-BWN', 'HWH-KGP', 'KGP-TATA', 'ASN-DGR', 'BWN-BHP', 'MLDT-NFK', 'HWH-LLH', 'SDAH-NH'],
+  SR: ['MAS-TRL', 'TRL-AJJ', 'AJJ-KPD', 'KPD-CBE', 'MAS-VM', 'VM-TPJ', 'TPJ-MDU', 'MDU-TEN', 'SBC-MYS', 'MAS-GDR'],
+};
+
+const demoZoneCorridors = (zone: Exclude<RailwayZoneCode, 'ALL'>): CorridorCapacityRecord[] => {
+  const division = zone === 'WR' ? 'Mumbai Central Division' : zone === 'CR' ? 'Pune Division' : zone === 'ER' ? 'Sealdah Division' : zone === 'SR' ? 'Chennai Division' : 'Delhi Division';
+  return DEMO_ZONE_SECTIONS[zone].map((section, index) => ({
+    section,
+    sectionId: normalizeRailwaySection(section),
+    sectionName: `${section} Demonstration Corridor`,
+    zoneCode: zone,
+    divisionName: division,
+    divisionCode: division.split(' ')[0].toUpperCase(),
+    kmStart: `${index * 10}`,
+    kmEnd: `${index * 10 + 10}`,
+    totalTracks: index % 3 === 0 ? 4 : 2,
+    lineType: index % 3 === 0 ? 'QUADRUPLE' : 'DOUBLE',
+    dailyTrainCount: 80 + index * 12,
+    capacityHoursUsed: 8 + index,
+    maxCapacityHours: 18 + index,
+    criticalityTier: index > 6 ? 'Tier-1 (High Utilization)' : 'Tier-2 (High Density)',
+    maxHourlyCapacity: 6 + index * 0.5,
+  }));
 };
 
 export function getDefects(selectedZone?: string): DefectRecord[] {
