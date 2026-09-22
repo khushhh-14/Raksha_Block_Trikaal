@@ -353,6 +353,32 @@ export async function verifyCredentialsAgainstSupabase(
     };
   }
 
+  const demoRoleById: Record<string, UserRole> = {
+    eng: 'ENG_OFFICER',
+    st: 'ST_OFFICER',
+    trd: 'TRD_OFFICER',
+    admin: 'SECTION_CONTROLLER',
+  };
+  const demoRole = demoRoleById[trimmedId.toLowerCase()];
+  const demoCredentials = demoRole ? JUDGE_DEMO_CREDENTIALS[demoRole] : undefined;
+  if (demoCredentials && trimmedPass === demoCredentials.pass) {
+    if (targetRole && targetRole !== demoRole) {
+      const deptNames: Record<UserRole, string> = {
+        ENG_OFFICER: 'Engineering Department (P-Way)',
+        ST_OFFICER: 'S&T Department',
+        TRD_OFFICER: 'TRD Department',
+        SECTION_CONTROLLER: 'Main Control Admin',
+      };
+      return { success: false, error: `❌ Please log in through the ${deptNames[targetRole]} portal.` };
+    }
+    const baseTemplate = OFFICIAL_ROLES[demoRole];
+    return {
+      success: true,
+      user: baseTemplate,
+      matchedDepartment: baseTemplate.department,
+    };
+  }
+
   try {
     // 1. Direct query on user_id as instructed:
     // query: supabase.from('profiles').select('*').eq('user_id', entered_id)
