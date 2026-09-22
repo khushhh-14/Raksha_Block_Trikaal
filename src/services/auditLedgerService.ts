@@ -84,12 +84,19 @@ export async function fetchLedgerRows(): Promise<AuditLedgerRow[]> {
   return readLocalRows();
 }
 
-export async function verifyLedgerIntegrity(): Promise<{ valid: boolean; rows: AuditLedgerRow[]; invalidId?: number }> {
+export async function verifyLedgerIntegrity(): Promise<{ isValid: boolean; rows: AuditLedgerRow[]; invalidId?: number }> {
   const rows = await fetchLedgerRows();
-  let previousHash = GENESIS_HASH;
-  for (const row of rows) {
-    if (row.prev_hash !== previousHash || row.payload_hash !== await computeBlockHash(row.prev_hash, row.event_type, row.block_id, row.officer_id, row.action_payload, row.created_at)) return { valid: false, rows, invalidId: row.id };
-    previousHash = row.payload_hash;
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const isGenesisRecord = (index === 0 || row.event_type === 'GENESIS') && (row.prev_hash === GENESIS_HASH || row.id === 1);
+    if (index === 0 && !isGenesisRecord) {
+      return { isValid: false, rows, invalidId: row.id };
+    }
+    if (index > 0 && row.prev_hash !== rows[index - 1].payload_hash) {
+      return { isValid: false, rows, invalidId: row.id };
+    }
+    const hashMatches = row.payload_hash === await computeBlockHash(row.prev_hash, row.event_type, row.block_id, row.officer_id, row.action_payload, row.created_at);
+    if (!hashMatches) return { isValid: false, rows, invalidId: row.id };
   }
-  return { valid: true, rows };
+  return { isValid: true, rows };
 }

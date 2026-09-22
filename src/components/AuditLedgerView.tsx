@@ -13,7 +13,7 @@ export const AuditLedgerView: React.FC = () => {
     setLoading(true);
     const result = await verifyLedgerIntegrity();
     setRows(result.rows);
-    setValid(result.valid);
+    setValid(result.isValid);
     setInvalidId(result.invalidId);
     setLoading(false);
   };
