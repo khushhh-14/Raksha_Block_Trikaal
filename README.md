@@ -50,6 +50,7 @@ All datasets included with this application are synthetic and simulated. They ar
 - Use the AI Co-Pilot for night-shift suggestions, temporary speed restriction attachments, and bundling opportunities.
 - Use the AI Optimizer to find compatible request bundles and report the time saved versus running them separately.
 - View the day's schedule in an interactive Gantt chart.
+- View train paths and active maintenance windows in the interactive string chart.
 - Monitor zonal activity on an analytics map populated from synthetic request and corridor data.
 - Publish coordinated, multi-department schedules.
 - Receive in-app notifications and audio alerts for new or urgent requests.
@@ -58,7 +59,7 @@ All datasets included with this application are synthetic and simulated. They ar
 
 - Optional Supabase realtime synchronization across devices, with five-second polling as a fallback when Supabase credentials and realtime setup are configured.
 - Responsive layouts for desktop and mobile control-room devices.
-- Zone and division context for Indian Railways zones including NR, WR, CR, ER, and SR.
+- Zone and division context for Indian Railways zones including NR, WR, CR, ER, and SR, with Northern Railway available in the zone selector.
 - CSV exports and PDF report generation.
 
 The frontend is a single-page React application. Department and admin dashboards are different views over the same local or Supabase-backed `block_requests` data. The CP-SAT service in `server/cp_sat_server.py` uses Google OR-Tools to propose bundles with compatible sections, dates, line types, machinery, and adjacent time windows. The ML risk badge uses the ML API when it is running and falls back to a deterministic local calculation when it is unavailable.

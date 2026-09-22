@@ -305,7 +305,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }`}
               >
                 <Compass className="w-4 h-4 text-cyan-300" />
-                <span>String Chart / Marey Dispatcher</span>
+                <span>String Chart</span>
               </button>
 
               <button
