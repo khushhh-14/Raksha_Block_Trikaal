@@ -183,6 +183,10 @@ export default function App() {
   }, [currentUser?.id]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [currentUser]);
+
+  useEffect(() => {
     const currentIds = new Set(notifications.map((notification) => notification.id));
     if (!notificationIdsRef.current) {
       notificationIdsRef.current = currentIds;

@@ -136,14 +136,14 @@ export const ImpactKpiDashboard: React.FC<ImpactKpiDashboardProps> = ({
     <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-[0_20px_50px_rgba(15,23,42,0.12)]" aria-labelledby="impact-kpi-title">
       <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#f59e0b] via-[#0ea5e9] to-[#10b981]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(14,165,233,0.08),_transparent_30%),radial-gradient(circle_at_left,_rgba(16,185,129,0.06),_transparent_30%)]" />
-      <header className="relative border-b border-slate-200 bg-slate-50 px-5 py-5 sm:px-7">
+      <header className="relative border-b border-blue-900/40 bg-gradient-to-r from-[#0b3b82] via-[#075985] to-[#0e7490] px-5 py-5 text-white sm:px-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-700"><Activity className="h-4 w-4" /> Executive impact cockpit</div>
-            <h2 id="impact-kpi-title" className="mt-2 text-xl font-bold tracking-tight text-slate-900">Manual Planning vs RAKSHA-BLOCK</h2>
-            <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-600">A rolling view of availability, bundled maintenance, detention exposure, and recovered track capacity.</p>
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-300"><Activity className="h-4 w-4" /> Executive impact cockpit</div>
+            <h2 id="impact-kpi-title" className="mt-2 text-xl font-bold tracking-tight text-white">Manual Planning vs RAKSHA-BLOCK</h2>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-blue-100">A rolling view of availability, bundled maintenance, detention exposure, and recovered track capacity.</p>
           </div>
-          <div className="flex items-center gap-3 text-[10px] font-semibold text-slate-600"><LegendDot color="bg-slate-400" label="Before (Manual)" /><LegendDot color="bg-amber-500" label="After (RAKSHA-BLOCK)" /></div>
+          <div className="flex items-center gap-3 text-[10px] font-semibold text-blue-100"><LegendDot color="bg-slate-300" label="Before (Manual)" /><LegendDot color="bg-amber-400" label="After (RAKSHA-BLOCK)" /></div>
         </div>
       </header>
 

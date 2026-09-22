@@ -151,15 +151,21 @@ export const runCpSatSolver = async (requests: BlockRequest[], delayWeight = 0.5
     ? `${configuredSolverUrl.replace(/\/$/, '')}/api/optimize`
     : '/api/cp-sat/solve';
 
-  const response = await fetch(solverUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests: payload, premium_train_windows: premiumTrainWindows, delay_weight: delayWeight }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(solverUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests: payload, premium_train_windows: premiumTrainWindows, delay_weight: delayWeight }),
+    });
+  } catch (error) {
+    console.warn('CP-SAT service unavailable; using local fallback.', error);
+    return localFallbackResult(activePending, delayWeight);
+  }
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`CP-SAT service failed (${response.status}): ${message || response.statusText}`);
+    console.warn(`CP-SAT service returned ${response.status}; using local fallback.`);
+    return localFallbackResult(activePending, delayWeight);
   }
 
   const result = (await response.json()) as SolverOptimizationResult;
@@ -184,3 +190,19 @@ export const runCpSatSolver = async (requests: BlockRequest[], delayWeight = 0.5
   };
 
 };
+
+const localFallbackResult = (requests: BlockRequest[], delayWeight: number): SolverOptimizationResult => ({
+  bundledWindows: [],
+  standaloneApproved: requests,
+  totalBlockHoursSavedMinutes: 0,
+  totalBlockHoursSavedFormatted: '0.0h',
+  percentHoursSaved: 0,
+  conflictReductionRatePercent: 0,
+  totalConflictsResolved: 0,
+  totalBundlesCreated: 0,
+  totalRequestsProcessed: requests.length,
+  hasOverlaps: false,
+  estimatedPassengerMinutesLost: 0,
+  delayWeightUsed: delayWeight,
+  riskModelStatus: 'LOCAL_FALLBACK',
+});

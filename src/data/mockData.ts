@@ -895,22 +895,16 @@ export function resetStoredRequests(): BlockRequest[] {
 
 export function getStoredUser(): User | null {
   try {
-    const raw = localStorage.getItem(CURRENT_USER_KEY);
-    if (!raw) return null;
-    const user = JSON.parse(raw) as User;
-    return { ...user, name: normalizePersonName(user.name) || user.name };
+    localStorage.removeItem(CURRENT_USER_KEY);
   } catch {
-    return null;
+    // Browser storage may be unavailable; a fresh login is still required.
   }
+  return null;
 }
 
 export function saveStoredUser(user: User | null): void {
   try {
-    if (user) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(CURRENT_USER_KEY);
-    }
+    localStorage.removeItem(CURRENT_USER_KEY);
   } catch (err) {
     console.error('Failed to save user session', err);
   }

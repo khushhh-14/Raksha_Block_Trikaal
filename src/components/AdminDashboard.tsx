@@ -407,8 +407,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-2">
-            {onOpenStringChart && <button type="button" onClick={onOpenStringChart} className="flex items-center gap-1.5 rounded border border-[#003366] bg-white px-3 py-1.5 text-sm font-medium text-[#003366] hover:bg-blue-50" title="Open time-distance string chart"><Layers className="h-4 w-4 text-cyan-600" /><span>String Chart</span></button>}
-            {onOpenAuditLedger && <button type="button" onClick={onOpenAuditLedger} className="flex items-center gap-1.5 rounded border border-emerald-700 bg-white px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50" title="Open cryptographic integrity ledger"><ShieldCheck className="h-4 w-4 text-emerald-600" /><span>Integrity Ledger</span></button>}
             <button
               id="export-pdf-report-btn"
               onClick={handleExportPdf}
