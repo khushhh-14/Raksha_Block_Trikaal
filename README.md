@@ -126,8 +126,7 @@ npm run dev
 
 The services are available at `http://localhost:8000`, `http://localhost:8001`, and `http://localhost:5173`. Open the frontend at http://localhost:5173/.
 
-The ML API loads the optional `models/defect_priority_lgb.pkl` artifact when present and otherwise serves its deterministic fallback. Local ML and FastAPI development dependencies are listed in `requirements.local.txt`. Vercel deploys the Vite frontend and TypeScript Gemini function only; the full FastAPI solver runs locally or through Docker, while the frontend uses its local optimization fallback when no remote solver URL is configured. The Gemini Co-Pilot chat uses the server-side `GEMINI_API_KEY` and optional `GEMINI_MODEL` environment variables. `VITE_GEMINI_API_KEY` is accepted temporarily for existing deployments, but should be migrated to `GEMINI_API_KEY` because `VITE_` values are intended for browser exposure.
-
+The ML API loads the optional `models/defect_priority_lgb.pkl` artifact when present and otherwise serves its deterministic fallback. Local ML and FastAPI development dependencies are listed in `requirements.local.txt`. Vercel deploys the Vite frontend and TypeScript Gemini function only; the full FastAPI solver runs locally or through Docker, while the frontend uses its local optimization fallback when no remote solver URL is configured. The Gemini Co-Pilot chat uses the server-side `GEMINI_API_KEY` and optional `GEMINI_MODEL` environment variables. 
 
 ## Environment Variables
 
@@ -214,4 +213,4 @@ RAKSHA-BLOCK-TRIKAAL-main/
 - Live app: https://raksha-block-trikaal.vercel.app/
 - Vercel project: https://vercel.com/harsh-2111s-projects/raksha_block_trikaal
 
-RAKSHA-BLOCK: coordinated corridor maintenance without the phone tag.
+RAKSHA recommends.The Section Controller decides.
