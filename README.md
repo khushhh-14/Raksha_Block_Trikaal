@@ -128,7 +128,6 @@ The services are available at `http://localhost:8000`, `http://localhost:8001`, 
 
 The ML API loads the optional `models/defect_priority_lgb.pkl` artifact when present and otherwise serves its deterministic fallback. Local ML and FastAPI development dependencies are listed in `requirements.local.txt`. Vercel deploys the Vite frontend and TypeScript Gemini function only; the full FastAPI solver runs locally or through Docker, while the frontend uses its local optimization fallback when no remote solver URL is configured. The Gemini Co-Pilot chat uses the server-side `GEMINI_API_KEY` and optional `GEMINI_MODEL` environment variables. `VITE_GEMINI_API_KEY` is accepted temporarily for existing deployments, but should be migrated to `GEMINI_API_KEY` because `VITE_` values are intended for browser exposure.
 
-To enable model-generated Co-Pilot answers in Vercel, open the project settings at **Settings > Environment Variables**, add `GEMINI_API_KEY` with a Gemini API key from Google AI Studio, select the Production environment, and redeploy. Do not put this key in frontend code or commit it to the repository. Without this variable, the app uses its deterministic local fallback and clearly labels the answer as degraded in the API response.
 
 ## Environment Variables
 
@@ -155,15 +154,6 @@ git commit -m "Prepare SIH 2026 production startup workflow"
 git push -u origin main
 ```
 
-## Login Credentials (Demo)
-
-| Portal | Username | Password |
-|---|---|---|
-| Engineering | `eng` | `eng@1234` |
-| S&T | `st` | `st@1234` |
-| TRD | `trd` | `trd@1234` |
-| Admin / Section Controller | `admin` | `admin@1234` |
-
 ## Application Workflow
 
 1. Sign in with one of the demo credentials above.
@@ -174,15 +164,6 @@ git push -u origin main
 6. The controller publishes the approved schedule.
 7. Department officers complete safety clearance after an approved block is finished.
 8. When configured, Supabase realtime updates and five-second polling synchronize requests, decisions, schedules, notifications, and safety updates across clients.
-
-## Enabling Cross-Device Supabase Sync
-
-Run [`supabase/realtime_setup.sql`](supabase/realtime_setup.sql) once in the Supabase Dashboard SQL Editor. It:
-
-- Adds `block_requests` to the `supabase_realtime` publication.
-- Adds the read/write RLS policies required by the current anon-key demo login.
-
-Reload both devices after running the script. New requests and controller decisions can arrive through Realtime, with five-second polling as a recovery path if a Realtime event is missed. This still operates on the application's synthetic/demo data unless connected to a separately managed dataset.
 
 ## Cross-Device Testing
 
@@ -216,10 +197,7 @@ RAKSHA-BLOCK-TRIKAAL-main/
 
 ## Security Notes
 
-This is currently a demo-grade deployment, not a production-hardened system:
-
 - All bundled application data is synthetic/demo data; this repository is not connected to Indian Railways production systems.
-- Demo login credentials are static and shared by role rather than by individual user.
 - `src/lib/supabase.ts` requires the Supabase URL and anon key through environment variables and does not include credential fallbacks.
 - The RLS policies in `supabase/realtime_setup.sql` are intentionally permissive for demo purposes. Use Supabase Auth and department claims to enforce per-department access in production.
 - Migrate the current demo role credentials to Supabase Auth before handling operational data.
