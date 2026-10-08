@@ -34,15 +34,15 @@ RAKSHA-BLOCK gives Engineering, S&T, and TRD departments a shared workspace to r
 
 > **RAKSHA recommends. The Section Controller decides.** No block is granted by the software.
 
-## Quick links
+## Quick Links
 
 | | |
 |---|---|
 | 🌐 **Live demo** | [raksha-block-trikaal.vercel.app](https://raksha-block-trikaal.vercel.app/) |
 | 🎬 **Prototype demonstration** (video) | [youtu.be/GBNe_w2-eEc](https://youtu.be/GBNe_w2-eEc) |
 | 🎓 **Problem understanding & animated explanation** (video) | [youtu.be/xhBWHfrbTVQ](https://youtu.be/xhBWHfrbTVQ) |
-| 📊 **Idea deck** (SIH format) | [TEAM_TRIKAAL_SIH26027.pdf](https://github.com/khushhh-14/Raksha_Block_Trikaal/blob/main/deliverables/deck/TEAM_TRIKAAL_SIH26027.pdf) |
-| 📘 **Project report** | [RAKSHA-BLOCK_SIH26027_Report.pdf](https://github.com/khushhh-14/Raksha_Block_Trikaal/blob/main/deliverables/report/RAKSHA-BLOCK_SIH26027_Report.pdf) · [Google Drive mirror](https://drive.google.com/drive/folders/1hTTHVlDjegOB918AqDYhyQoiom11IQdL?usp=sharing) |
+| 📊 **Idea deck** (SIH format) | [📥 Download TEAM TRIKAAL SIH26027 Deck (PDF)](https://github.com/khushhh-14/Raksha_Block_Trikaal/releases/download/v1.0/TEAM_TRIKAAL_SIH26027.pdf) |
+| 📘 **Project report** | [📥 Download RAKSHA-BLOCK SIH26027 Report (PDF)](https://github.com/khushhh-14/Raksha_Block_Trikaal/releases/download/v1.0/RAKSHA-BLOCK_SIH26027_Report.pdf) · [Google Drive mirror](https://drive.google.com/drive/folders/1hTTHVlDjegOB918AqDYhyQoiom11IQdL?usp=sharing) |
 | 💻 **Source code** | [github.com/khushhh-14/Raksha_Block_Trikaal](https://github.com/khushhh-14/Raksha_Block_Trikaal) |
 
 > **Status: working prototype.** Everything in this repository runs on synthetic data and is not connected to Indian Railways production systems. See [Data Status](#data-status).
